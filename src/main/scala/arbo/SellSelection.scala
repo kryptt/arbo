@@ -1,6 +1,6 @@
 package arbo.data
 
-import cats.data.{Ior, NonEmptyList}
+import cats.data.NonEmptyList
 
 sealed trait SellSelection
 
@@ -24,39 +24,37 @@ object SellSelection {
 
   def firstOrder(order: SellOrder) = SellPath(NonEmptyList.one(order))
 
-  def appendOrder(order: SellOrder, orders: NonEmptyList[SellOrder]) = SellPath(orders :+ order)
-
   def orders(os: NonEmptyList[SellOrder]) = SellPath(os)
 
-  def bestSell(requiredCurrency: Currency)(left: SellSelection, right: SellSelection): SellSelection = {
-    println("bestSell")
-    def whenSameCurrency(left: SellPath, right: SellPath) = {
-      Ior
-        .fromOptions(finalAmmount(left), finalAmmount(right))
-        .fold[SellSelection](noSale("incomplete sellPath"))(_.fold(_ => left,
-              _ => right,
-              (lA, rA) => {
-                val diff = rA - lA
-                if (diff > 0) right
-                else if (diff < 0) left
-                else if (left.orders.length > right.orders.length) right
-                else left
-              }))
+  def appendToOrders(order: SellOrder, orders: NonEmptyList[SellOrder]) = SellPath(orders :+ order)
+
+  def bestSell(left: SellSelection, right: SellSelection): SellSelection = {
+
+    @inline def whenSameCurrency(left: SellPath, right: SellPath) =
+      (finalAmmount(left), finalAmmount(right)) match {
+        case (None, None) => noSale("incomplete sellPath")
+        case (Some(_), None) => left
+        case (None, Some(_)) => right
+        case (Some(lA), Some(rA)) =>
+          val diff = rA - lA
+          if (diff > 0) right
+          else if (diff < 0) left
+          else if (left.orders.length > right.orders.length) right
+          else left
+      }
+
+    @inline def whenSellPath(left: SellPath, right: SellPath) =
+      if (finalCurrency(left) != finalCurrency(right))
+        noSale("unexpected finalCurrency mismatch")
+      else whenSameCurrency(left, right)
+
+    (left, right) match {
+      case (left: SellPath, right: SellPath) => whenSellPath(left, right)
+      case (left: SellPath, _) => left
+      case (_, right: SellPath) => right
+      case (left, _: InitialState) => left
+      case (_: InitialState, right) => right
+      case (NoSale(lReasons), NoSale(rReasons)) => NoSale(lReasons ::: rReasons)
     }
-    def whenSellPath(left: SellPath, right: SellPath) =
-      (finalCurrency(left), finalCurrency(right)) match {
-      case (lC, rC) if lC == rC && lC == requiredCurrency => whenSameCurrency(left, right)
-      case (lC, _) if lC == requiredCurrency => left
-      case (_, rC) if rC == requiredCurrency => right
-      case _ => left
-      }
-        (left, right) match {
-        case (left: SellPath, right: SellPath) => whenSellPath(left, right)
-        case (left: SellPath, _) => left
-        case (_, right: SellPath) => right
-        case (left, _: InitialState) => left
-        case (_: InitialState, right) => right
-        case (NoSale(lReasons), NoSale(rReasons)) => NoSale(lReasons ::: rReasons)
-      }
   }
 }
