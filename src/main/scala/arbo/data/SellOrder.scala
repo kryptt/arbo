@@ -18,9 +18,11 @@ object SellOrder {
   def nextHolding(order: SellOrder): Option[Holding] =
     toAmmount(order).map(Holding(order.to, _))
 
-  def originalHolding(order: SellOrder): Holding = Holding(order.from, order.fromAmmount)
+  def originalHolding(order: SellOrder): Holding =
+    Holding(order.from, order.fromAmmount)
 
-  def emptyOrder(holding: Holding): SellOrder = SellOrder(holding.currency, holding.currency, 1, holding.ammount, Fee(0, holding.currency))
+  def emptyOrder(holding: Holding): SellOrder =
+    SellOrder(holding.currency, holding.currency, 1, holding.ammount, Fee(0, holding.currency))
 
 }
 

@@ -3,6 +3,7 @@ val DrosteVersion = "0.8.0"
 val CirceVersion = "0.12.3"
 val Specs2Version = "4.8.3"
 val LogbackVersion = "1.2.3"
+val MonocleVersion = "2.0.1"
 
 lazy val root = (project in file("."))
   .settings(
@@ -17,6 +18,9 @@ lazy val root = (project in file("."))
       "org.http4s"      %% "http4s-dsl"          % Http4sVersion,
       "io.circe"        %% "circe-generic"       % CirceVersion,
       "io.higherkindness" %% "droste-core"       % DrosteVersion,
+      "com.github.julien-truffaut" %% "monocle-core"  % MonocleVersion,
+      "com.github.julien-truffaut" %% "monocle-macro" % MonocleVersion,
+      "com.github.julien-truffaut" %% "monocle-law"   % MonocleVersion % "test",
       "org.specs2"      %% "specs2-core"         % Specs2Version % "test",
       "ch.qos.logback"  %  "logback-classic"     % LogbackVersion
     ),

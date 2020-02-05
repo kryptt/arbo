@@ -1,4 +1,4 @@
-package arbo
+package arbo.server
 
 import cats.effect.IO
 import org.http4s._

@@ -1,5 +1,6 @@
 package arbo
 
+import arbo.server.ArboServer
 import cats.effect.{ExitCode, IO, IOApp}
 import cats.implicits._
 

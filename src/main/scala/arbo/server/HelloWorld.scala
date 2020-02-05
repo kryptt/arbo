@@ -1,4 +1,4 @@
-package arbo
+package arbo.server
 
 import cats.Applicative
 import cats.implicits._
