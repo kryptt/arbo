@@ -14,72 +14,67 @@ object Calculator {
   import SellTree._
   import SellSelection._
 
-  def optionsCoalgebra(sellOptions: GetSellOptions, maxDepth: Depth) =
+  def optionsCoalgebra(sellOptions: GetSellOptions, terminalCurrency: Currency, maxDepth: Depth) = {
     ElgotCoalgebra[Either[SellStep, ?], SellTree, SellSeed] {
-      case (pOrderOpt, holding, depth) if depth > maxDepth =>
-        Left(_ => pOrderOpt.fold[SellSelection](InitialState(holding))(firstOrder))
+      case (_, _, depth) if depth > maxDepth =>
+        Left(_ => noSale(s"maximum search depth ($maxDepth) exceeded"))
+      case (Some(pOrder), holding, depth) if holding.currency == terminalCurrency =>
+        Right(TerminalNode(pOrder, depth))
       case (pOrderOpt, holding, depth) =>
-      sellOptions(holding)
-        .flatMap {
-          order => SellOrder.nextHolding(order).map((Some(order), _, depth + 1))
-        } match {
-          case Nil =>
-            println("coalgNil")
-            Left (_ => pOrderOpt.fold[SellSelection](InitialState(holding))(firstOrder))
-          case firstChild :: otherChildren =>
-            println(s"coalgOpts $depth")
-            val pOrder = pOrderOpt.getOrElse(SellOrder.emptyOrder(holding))
-            Right(SellNode(pOrder, depth, NonEmptyList(firstChild, otherChildren)))
-        }
+        val pOrder = ensurePreviousOrder(pOrderOpt, holding)
+        sellOptions(holding)
+          .flatMap {
+            order => SellOrder.nextHolding(order).map((Some(order), _, depth + 1))
+          } match {
+            case Nil =>
+              Right(TerminalNode(pOrder, depth))
+            case firstChild :: otherChildren =>
+              Right(SellNode(pOrder, depth, NonEmptyList(firstChild, otherChildren)))
+          }
     }
+  }
 
-  def optionsAlgebra(terminalCurrency: Currency, maxDepth: Depth) =
-    Algebra[SellTree, SellStep] {
-      case SellNode(_, depth, _) if depth >= maxDepth =>
-        println("msde1")
-        _ => noSale("max search depth exceded")
-      case TerminalNode(_, depth) if depth > maxDepth =>
-        println("msde2")
-        _ => noSale("max search depth exceded")
-      case SellNode(order, _, outcomes)  =>
-        {
-          case _: InitialState =>
-            println("snis")
-            outcomes.map(step => step(firstOrder(order)))
-              .reduceLeft(bestSell(terminalCurrency))
-          case SellPath(orders) =>
-            println("snsp")
-            outcomes.map(step => step(appendOrder(order, orders)))
-              .reduceLeft(bestSell(terminalCurrency))
-          case other => other
-        }
-      case TerminalNode(Holding(finalCurrency, finalAmmount), _) =>
-        {
-          case sp @ SellPath(orders) =>
-            println("tnsp")
-            val initAmmount = initialAmmount(sp)
-            val initCurrency = initialCurrency(sp)
-            val profit = finalAmmount - initAmmount
-            if (finalCurrency != initCurrency) noSale("ends in a different currency")
-            else if (profit <= 0) noSale("no profit")
-            else SellPath(orders)
-          case _:InitialState =>
-            println("tnis")
-            noSale("no sales selected")
-          case ns:NoSale =>
-            println("tnns")
-            ns
-        }
-    }
+  val optionsAlgebra = Algebra[SellTree, SellStep] {
+    case SellNode(order, _, outcomes)  =>
+      {
+        case SellPath(orders) =>
+          selectBestOutcome(outcomes, appendToOrders(order, orders))
+        case _:InitialState =>
+          selectBestOutcome(outcomes, firstOrder(order))
+        case ns:NoSale => ns
+      }
+    case TerminalNode(lastOrder, _) =>
+      {
+        case sp @ SellPath(orders) =>
+          val initAmmount = initialAmmount(sp)
+          val initCurrency = initialCurrency(sp)
+          val finAmmount = SellOrder.toAmmount(lastOrder)
+          val finCurrency = lastOrder.to
+          val profit = finAmmount.fold(BigDecimal(-1))(_ - initAmmount)
+          if (finCurrency != initCurrency) noSale("ends in a different currency")
+          else if (profit <= 0) noSale(s"no profit ($profit)")
+          else SellPath(orders :+ lastOrder)
+        case _:InitialState => noSale("no sales selected")
+        case ns:NoSale => ns
+      }
+  }
 
-  def initialSeed(holding: Holding): SellSeed =
-    (None, holding, 0)
 
   def selection(sellOptions: GetSellOptions, terminalCurrency: Currency, maxDepth: Depth)(holding: Holding): SellSelection =
     elgot[SellTree, SellSeed, SellStep](
-      optionsAlgebra(terminalCurrency, maxDepth),
-      optionsCoalgebra(sellOptions, maxDepth))
+      optionsAlgebra,
+      optionsCoalgebra(sellOptions, terminalCurrency, maxDepth))
       .apply(initialSeed(holding))
       .apply(init(holding))
+
+  @inline def initialSeed(holding: Holding): SellSeed =
+    (None, holding, 0)
+
+  @inline def ensurePreviousOrder(pOrderOpt: Option[SellOrder], holding: Holding) =
+    pOrderOpt.getOrElse(SellOrder.emptyOrder(holding))
+
+  @inline def selectBestOutcome(outcomes: NonEmptyList[SellStep], sel: SellSelection) =
+    outcomes.map(step => step(sel))
+      .reduceLeft(bestSell)
 
 }
