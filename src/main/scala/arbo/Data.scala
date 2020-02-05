@@ -10,9 +10,9 @@ object SellOrder {
 
   def toAmmount(order: SellOrder): Option[Ammount] =
     if (order.fee.currency == order.to)
-      Some((order.fromAmmount * order.price) - order.fee.ammount)
+      Some((order.fromAmmount / order.price) - order.fee.ammount)
     else if (order.fee.currency == order.from)
-      Some((order.fromAmmount - order.fee.ammount) * order.price)
+      Some((order.fromAmmount - order.fee.ammount) / order.price)
     else None
 
   def nextHolding(order: SellOrder): Option[Holding] =
@@ -21,5 +21,6 @@ object SellOrder {
   def originalHolding(order: SellOrder): Holding = Holding(order.from, order.fromAmmount)
 
   def emptyOrder(holding: Holding): SellOrder = SellOrder(holding.currency, holding.currency, 1, holding.ammount, Fee(0, holding.currency))
+
 }
 
