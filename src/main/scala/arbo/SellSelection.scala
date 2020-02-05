@@ -8,7 +8,8 @@ object SellSelection {
   case class InitialState(holding: Holding) extends SellSelection
   case class SellPath(orders: SellSequence) extends SellSelection
 
-  def init(holding: Holding) = InitialState(holding)
+  def init(holding: Holding): InitialState =
+    InitialState(holding)
 
   def initialCurrency(sp: SellPath): Currency = sp.orders.head.from
   def initialAmmount(sp: SellPath): Ammount = sp.orders.head.fromAmmount
@@ -20,17 +21,17 @@ object SellSelection {
 
   case class NoSale(reasons: NonEmptyList[String]) extends SellSelection
 
-  def noSale(reason: String) = NoSale(NonEmptyList.one(reason))
+  def noSale(reason: String): NoSale = NoSale(NonEmptyList.one(reason))
 
-  def firstOrder(order: SellOrder) = SellPath(NonEmptyList.one(order))
+  def firstOrder(order: SellOrder): SellPath = SellPath(NonEmptyList.one(order))
 
-  def orders(os: NonEmptyList[SellOrder]) = SellPath(os)
+  def orders(os: NonEmptyList[SellOrder]): SellPath = SellPath(os)
 
-  def appendToOrders(order: SellOrder, orders: NonEmptyList[SellOrder]) = SellPath(orders :+ order)
+  def appendToOrders(order: SellOrder, orders: NonEmptyList[SellOrder]): SellPath = SellPath(orders :+ order)
 
   def bestSell(left: SellSelection, right: SellSelection): SellSelection = {
 
-    @inline def whenSameCurrency(left: SellPath, right: SellPath) =
+    @inline def whenSameCurrency(left: SellPath, right: SellPath): SellSelection =
       (finalAmmount(left), finalAmmount(right)) match {
         case (None, None) => noSale("incomplete sellPath")
         case (Some(_), None) => left
@@ -43,7 +44,7 @@ object SellSelection {
           else left
       }
 
-    @inline def whenSellPath(left: SellPath, right: SellPath) =
+    @inline def whenSellPath(left: SellPath, right: SellPath): SellSelection =
       if (finalCurrency(left) != finalCurrency(right))
         noSale("unexpected finalCurrency mismatch")
       else whenSameCurrency(left, right)
