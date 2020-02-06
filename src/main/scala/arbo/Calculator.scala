@@ -15,6 +15,13 @@ object Calculator {
   import SellTree._
   import SellSelection._
 
+  def selection[M[_]: Monad](sellOptions: GetSellOptions[M], terminalCurrency: Currency, maxDepth: Depth)(holding: Holding): M[SellSelection] =
+    elgotM[M, SellTree, SellSeed, SellStep](
+      optionsAlgebra,
+      optionsCoalgebra(sellOptions, terminalCurrency, maxDepth))
+      .apply(initialSeed(holding))
+      .map(_.apply(init(holding)))
+
   def optionsCoalgebra[M[_]: Applicative](sellOptions: GetSellOptions[M], terminalCurrency: Currency, maxDepth: Depth): ElgotCoalgebraM[M, Either[SellStep, *], SellTree, SellSeed] = {
     ElgotCoalgebraM[M, Either[SellStep, *], SellTree, SellSeed] {
       case (_, _, depth) if depth > maxDepth =>
@@ -34,20 +41,13 @@ object Calculator {
         terminalNodeStep(lastOrder)
     }
 
-  def selection[M[_]: Monad](sellOptions: GetSellOptions[M], terminalCurrency: Currency, maxDepth: Depth)(holding: Holding): M[SellSelection] =
-    elgotM[M, SellTree, SellSeed, SellStep](
-      optionsAlgebra,
-      optionsCoalgebra(sellOptions, terminalCurrency, maxDepth))
-      .apply(initialSeed(holding))
-      .map(_.apply(init(holding)))
-
   @inline def initialSeed(holding: Holding): SellSeed =
     (None, holding, 0)
 
   @inline def nextSeed(depth: Depth): SellOrder => Option[SellSeed] =
     (order: SellOrder) => SellOrder.nextHolding(order).map((Some(order), _, depth + 1))
 
-  @inline def buildChildren[L, F[_]: Functor](sellOptions: GetSellOptions[F], pOrderOpt: Option[SellOrder], holding: Holding, depth: Depth): F[Either[L, SellTree[SellSeed]]] = {
+  @inline def buildChildren[L, M[_]: Functor](sellOptions: GetSellOptions[M], pOrderOpt: Option[SellOrder], holding: Holding, depth: Depth): M[Either[L, SellTree[SellSeed]]] = {
     val pOrder = ensurePreviousOrder(pOrderOpt, holding)
     sellOptions(holding).map(_.flatMap(nextSeed(depth)) match {
       case Nil => Right(TerminalNode(pOrder, depth))
