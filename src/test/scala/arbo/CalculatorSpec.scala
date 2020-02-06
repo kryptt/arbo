@@ -1,5 +1,7 @@
 package arbo
 
+import cats.Id
+
 import org.specs2.matcher.Matcher
 import org.specs2.matcher.MatchResult
 
@@ -34,7 +36,7 @@ class CalculatorSpec extends org.specs2.mutable.Specification {
     beEqualTo(fH.currency) ^^ { (h: Holding) => h.currency }
 
   def threeHops(): MatchResult[Holding] = {
-    val sellOptions: GetSellOptions = {
+    val sellOptions: GetSellOptions[Id] = {
       case Holding("EUR", _) =>
         List(SellOrder("EUR", "BTC", 6500, 1000, Fee(0.12, "EUR")))
       case Holding("BTC", _) =>
