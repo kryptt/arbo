@@ -2,21 +2,23 @@ package arbo
 
 import cats.Id
 
+import org.specs2.{ScalaCheck, Specification}
 import org.specs2.matcher.Matcher
 import org.specs2.matcher.MatchResult
 
 import data._
+import org.scalacheck.Prop
+import org.scalacheck.Gen
+import org.scalacheck.cats.implicits._
 
-class CalculatorSpec extends org.specs2.mutable.Specification {
-  "Calculator" >> {
-    "works when there are no options" >> {
-      noOptions()
-    }
-    "does a three stop hop" >> {
-      threeHops()
-    }
-  }
+class CalculatorSpec extends Specification with ScalaCheck {
+  def is = s2"""
+    Works when there are no options ${noOptions()}
+    Does a three stop hop ${threeHops()}
+    Runs through arbitrary scenarios ${calcProperty}
+"""
 
+  import Generators._
   import SellTree._
   import SellSelection._
 
@@ -55,4 +57,17 @@ class CalculatorSpec extends org.specs2.mutable.Specification {
     println(s"result: $result")
     finalHolding(result.asInstanceOf[SellPath]).get must holdCloseTo(fH)
   }
+
+  val depthGen = Gen.chooseNum[Int](2, 100)
+
+  val calculatorGen: Gen[SellSelection] = for {
+    holding <- holdingGen
+    maxDepth <- depthGen
+    result <- Calculator.selection(getSellOptionsGen, holding.currency, maxDepth)(holding)
+  } yield result
+
+  val calcProperty = Prop.forAll(calculatorGen) { result =>
+    println(s"result: $result")
+    result != null
+  }.set(minTestsOk = 1000, workers = 10, maxSize = 6)
 }

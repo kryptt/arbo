@@ -18,11 +18,13 @@ lazy val root = (project in file("."))
       "org.http4s"      %% "http4s-dsl"          % Http4sVersion,
       "io.circe"        %% "circe-generic"       % CirceVersion,
       "io.higherkindness" %% "droste-core"       % DrosteVersion,
+      "io.chrisdavenport" %% "cats-scalacheck"   % "0.2.0",
       "com.github.julien-truffaut" %% "monocle-core"  % MonocleVersion,
       "com.github.julien-truffaut" %% "monocle-macro" % MonocleVersion,
       "com.github.julien-truffaut" %% "monocle-law"   % MonocleVersion % "test",
-      "org.specs2"      %% "specs2-core"         % Specs2Version % "test",
+      "org.specs2"      %% "specs2-scalacheck"        % Specs2Version % "test",
       "ch.qos.logback"  %  "logback-classic"     % LogbackVersion
     ),
     addCompilerPlugin("org.typelevel" %% "kind-projector"     % "0.11.0" cross CrossVersion.full),
+    scalacOptions += "-Ymacro-annotations"
   )

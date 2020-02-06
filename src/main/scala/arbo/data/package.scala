@@ -18,7 +18,7 @@ package object data {
 
   type SellSequence = NonEmptyList[SellOrder]
 
-  type GetSellOptions[F[_]] = Holding => F[List[SellOrder]]
+  type GetSellOptions[F[_]] = Holding => F[SellOptions]
 
   type SellStep = SellSelection => SellSelection
 

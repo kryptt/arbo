@@ -1,9 +1,12 @@
 package arbo.data
 
+import monocle.macros.Lenses
+
 case class Holding(currency: Currency, ammount: Ammount)
 
 case class Fee(ammount: Ammount, currency: Currency)
 
+@Lenses
 case class SellOrder(from: Currency, to: Currency, price: Price, fromAmmount: Ammount, fee: Fee)
 
 object SellOrder {
