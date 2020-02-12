@@ -1,4 +1,5 @@
-package arbo.server
+package arbo
+package server
 
 import cats.implicits._
 import cats.effect.{ConcurrentEffect, Timer}
@@ -17,6 +18,7 @@ object ArboServer {
       client <- BlazeClientBuilder[F](global).stream
       helloWorldAlg = HelloWorld.impl[F]
       jokeAlg = Jokes.impl[F](client)
+      krakenAlg = kraken.RestClient[F](client)
 
       // Combine Service Routes into an HttpApp.
       // Can also be done via a Router if you
@@ -24,6 +26,7 @@ object ArboServer {
       // in the underlying routes.
       httpApp = (
         ArboRoutes.helloWorldRoutes[F](helloWorldAlg) <+>
+        ArboRoutes.arbitrageOptions[F](krakenAlg) <+>
         ArboRoutes.jokeRoutes[F](jokeAlg)
       ).orNotFound
 
@@ -31,7 +34,7 @@ object ArboServer {
       finalHttpApp = Logger.httpApp(true, true)(httpApp)
 
       exitCode <- BlazeServerBuilder[F]
-        .bindHttp(8080, "0.0.0.0")
+        .bindHttp(9000, "0.0.0.0")
         .withHttpApp(finalHttpApp)
         .serve
     } yield exitCode

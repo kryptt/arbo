@@ -1,4 +1,5 @@
-package arbo.server
+package arbo
+package server
 
 import cats.implicits._
 import cats.effect.Sync
@@ -6,6 +7,17 @@ import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
 
 object ArboRoutes {
+
+  import kraken.{RestClient => KrakenAPI}
+
+  def arbitrageOptions[F[_]: Sync](K: KrakenAPI[F]): HttpRoutes[F] = {
+    val dsl = new Http4sDsl[F]{}
+    import dsl._
+    HttpRoutes.of[F] {
+      case GET -> Root / "options" =>
+        K.assetPairs.flatMap(p => Ok(p.toString))
+    }
+  }
 
   def jokeRoutes[F[_]: Sync](J: Jokes[F]): HttpRoutes[F] = {
     val dsl = new Http4sDsl[F]{}
