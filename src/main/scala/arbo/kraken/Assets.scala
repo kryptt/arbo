@@ -75,15 +75,59 @@ object CurrencyPair {
     case cRE(from, to) => Some(CurrencyPair(from, to))
     case _ => None
   }
+
+  def toKraken(cp: CurrencyPair) = cp.from + cp.to
+
 }
 
 object FeesResponse {
   implicit val feesResponseDecoder: Decoder[FeesResponse] = new Decoder[FeesResponse] {
     final def apply(c: HCursor): Decoder.Result[FeesResponse] =
-      c.downField("result").as[FeesResponse](Decoder.decodeMap[CurrencyPair, FeeOptions])
+      c.downField("result").as(Decoder.decodeMap[CurrencyPair, FeeOptions])
   }
 
   implicit def feesResponseEntityDecoder[F[_]: Sync]: EntityDecoder[F, FeesResponse] =
+    jsonOf
+
+}
+
+case class Ticker (
+  ask: Price,
+  bid: Price,
+  closed: Price,
+  low: Price,
+  high: Price,
+  open: Price,
+)
+
+object Ticker {
+  implicit val tickerDecoder: Decoder[Ticker] = new Decoder[Ticker] {
+    final def apply(c: HCursor): Decoder.Result[Ticker] =
+      (c.downField("a").as[NonEmptyList[BigDecimal]].map(_.head),
+       c.downField("b").as[NonEmptyList[BigDecimal]].map(_.head),
+       c.downField("c").as[NonEmptyList[BigDecimal]].map(_.head),
+       c.downField("l").as[NonEmptyList[BigDecimal]].map(_.head),
+       c.downField("h").as[NonEmptyList[BigDecimal]].map(_.head),
+       c.downField("o").as[BigDecimal]
+      ).mapN(Ticker.apply _)
+        .left.map { e =>
+          println(s"failed to parse ticker ${c.value}")
+          e
+        }
+  }
+}
+
+object TickerResponse {
+  implicit val tickerResponseDecoder: Decoder[TickerResponse] = new Decoder[TickerResponse] {
+    final def apply(c: HCursor): Decoder.Result[TickerResponse] =
+      c.downField("result").as(Decoder.decodeMap[CurrencyPair, Ticker])
+.left.map { e =>
+  println(s"error parsing ticker result $e \n \n${c.value} \n")
+e
+}
+  }
+
+  implicit def tickerResponseEntityDecoder[F[_]: Sync]: EntityDecoder[F, TickerResponse] =
     jsonOf
 
 }
