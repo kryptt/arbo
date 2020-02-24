@@ -18,7 +18,7 @@ object ArboServer {
       client <- BlazeClientBuilder[F](global).stream
       helloWorldAlg = HelloWorld.impl[F]
       jokeAlg = Jokes.impl[F](client)
-      krakenAlg = kraken.RestClient[F](client)
+      krakenAlg <- Stream.resource(kraken.RestClient[F](client))
 
       // Combine Service Routes into an HttpApp.
       // Can also be done via a Router if you

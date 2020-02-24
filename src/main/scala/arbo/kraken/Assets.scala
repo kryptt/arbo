@@ -8,8 +8,10 @@ import io.circe._
 
 import cats.data.NonEmptyList
 import cats.effect.Sync
+import cats.Order
 import cats.instances.either._
 import cats.instances.option._
+import cats.instances.string._
 import cats.syntax.apply._
 
 import scala.util.{Try, Success, Failure}
@@ -67,6 +69,8 @@ object CurrencyPair {
 
   val cPattern = "([XZ]?\\w{3}(?:\\.d)?|DASH|ALGO|ATOM|USD[CT]|LINK|WAVES|NANO|PAXG|QTUM|SC)"
   val cRE = (cPattern * 2).r
+
+  implicit val cpOrder: Order[CurrencyPair] = Order.by(_.from)
 
   implicit val currencyPairKeyDecoder =
     KeyDecoder.instance(fromString _)

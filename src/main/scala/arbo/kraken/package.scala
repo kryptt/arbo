@@ -6,4 +6,6 @@ package object kraken {
 
   type TickerResponse = Map[CurrencyPair, Ticker]
 
+  type SalesResponse = List[SaleLine]
+
 }

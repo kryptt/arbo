@@ -1,7 +1,10 @@
 package arbo
 package cache
 
-import cats.effect.Async
+import scalacache._
+import scalacache.caffeine._
+
+import cats.effect.{Async, Resource}
 import cats.effect.concurrent.{Semaphore, Ref}
 
 import cats.syntax.apply._
@@ -30,6 +33,11 @@ object Keep {
     val ref = eval.flatMap(ini => Ref.of(ini))
 
     (sem, ref).mapN(run)
+  }
+
+  def cache[F[_]: Async, A]: Resource[F, Cache[A]] = {
+    import CatsEffect.modes._
+    Resource.make(Async[F].delay(CaffeineCache[A]))(_.close().void)
   }
 
 }

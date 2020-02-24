@@ -1,6 +1,8 @@
 package arbo
 package server
 
+import data.{Ammount, Holding}
+
 import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
 
@@ -18,6 +20,13 @@ object ArboRoutes {
     HttpRoutes.of[F] {
       case GET -> Root / "options" =>
         K.assetPairs.flatMap(p => Ok(p.toString))
+      case GET -> Root / "sales" :? params =>
+        val balance: Ammount = params
+          .get("eur")
+          .foldMap(_.map(BigDecimal.apply).sum)
+        K.sales(Holding("EUR", balance))
+          .flatMap(s => Ok(s.toString))
+
       case GET -> Root / "ticker" :? params =>
         params
           .get("pair")
