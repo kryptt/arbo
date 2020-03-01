@@ -27,6 +27,8 @@ object RestClient {
 
   val baseURI = uri"https://api.kraken.com/0/public/"
 
+  val userVolume = 100000
+
   import scalacache.CatsEffect.modes.async
 
   def apply[F[_]: Async](C: Client[F]): Resource[F, RestClient[F]] = for {
@@ -59,8 +61,28 @@ object RestClient {
       pairs <- NonEmptyList.fromList(candidates.keys.toList).fold[F[NonEmptyList[CurrencyPair]]](Async[F].raiseError(new Exception("no valid destination currencies")))(Async[F].pure)
       rates <- ticker(pairs)
     } yield rates.toList.map {
-      case (CurrencyPair(from, to), ticker) =>
-        SellOrder(from, to, (ticker.ask + ticker.bid ) / 2, holding.ammount, Fee(0, from))
+      case (cp@CurrencyPair(from, to), ticker) if from == holding.currency =>
+        calcSellOrder(
+          makerFees = fees(cp).maker,
+          price = 2 / (ticker.bid + ticker.ask),
+          holding = holding,
+          to = to)
+      case (cp@CurrencyPair(from, to), ticker) if to == holding.currency =>
+        calcSellOrder(
+          makerFees = fees(cp).maker,
+          price = (ticker.bid + ticker.ask) / 2,
+          holding = holding,
+          to = from)
+    }
+
+    def calcSellOrder(makerFees: List[FeeOption], price: Price, holding: Holding, to: Currency): SellOrder = {
+      val fee = makerFees
+          .findLast(_.volume < userVolume)
+          .fold[Ammount](0.0024)(_.percentage / 100)
+      val from = holding.currency
+      val ammount = holding.ammount / (1 + fee)
+      val feeAmmount = ammount * fee
+      SellOrder(from, to, price, ammount, Fee(feeAmmount, from))
     }
   }
 

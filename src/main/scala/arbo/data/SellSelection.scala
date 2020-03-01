@@ -65,7 +65,7 @@ object SellSelection {
       case (_, right: SellPath) => right
       case (left, _: InitialState) => left
       case (_: InitialState, right) => right
-      case (NoSale(lReasons), NoSale(rReasons)) => NoSale(lReasons ::: rReasons)
+      case (NoSale(lReasons), NoSale(rReasons)) => NoSale(NonEmptyList(lReasons.head, List(rReasons.head)))
     }
   }
 }

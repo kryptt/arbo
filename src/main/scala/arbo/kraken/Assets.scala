@@ -20,7 +20,7 @@ import data._
 
 case class FeeOption (
   volume: Int,
-  ammount: Ammount,
+  percentage: Ammount,
 )
 
 object FeeOption {
