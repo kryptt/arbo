@@ -9,14 +9,19 @@ import org.http4s.server.middleware.Logger
 import org.http4s.implicits._
 
 import scala.concurrent.ExecutionContext.global
+import scala.concurrent.duration._
 
 object ArboServer {
 
   def stream[F[_]: ConcurrentEffect](implicit T: Timer[F]): Stream[F, Nothing] = {
     for {
-      client <- BlazeClientBuilder[F](global).stream
-      helloWorldAlg = HelloWorld.impl[F]
-      jokeAlg = Jokes.impl[F](client)
+      client <- BlazeClientBuilder[F](global)
+      .withSocketKeepAlive(true)
+      .withMaxTotalConnections(100)
+      .withConnectTimeout(1.minute)
+      .withResponseHeaderTimeout(5.minutes)
+      .withIdleTimeout(30.minutes)
+      .stream
       krakenAlg <- Stream.resource(kraken.RestClient[F](client))
 
       // Combine Service Routes into an HttpApp.

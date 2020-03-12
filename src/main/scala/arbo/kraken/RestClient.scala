@@ -34,6 +34,7 @@ object RestClient {
   def apply[F[_]: Async](C: Client[F]): Resource[F, RestClient[F]] = for {
     feeCache <- Keep.cache[F, FeesResponse]
     tickerCache <- Keep.cache[F, TickerResponse]
+    salesCache <- Keep.cache[F, SellOptions]
   } yield new RestClient[F] {
     val dsl = new Http4sClientDsl[F]{}
     import dsl._
@@ -51,11 +52,10 @@ object RestClient {
       C.expect[TickerResponse](req)
     }
 
-    def sales(holding: Holding): F[SellSelection] = {
+    def sales(holding: Holding): F[SellSelection] =
       Calculator.selection(getSellOptions, "EUR", 6)(holding)
-    }
 
-    @inline def getSellOptions(holding: Holding): F[SellOptions] = for {
+    @inline def getSellOptions(holding: Holding): F[SellOptions] = salesCache.cachingF("sellOptions", holding)(Some(1.minute))(for {
       fees <- assetPairs
       candidates = fees.filter { case (k, _) => k.from == holding.currency || k.to == holding.currency }
       pairs <- Async[F].fromOption(NonEmptyList.fromList(candidates.keys.toList), new Exception("no valid destination currencies"))
@@ -73,7 +73,7 @@ object RestClient {
           price = (ticker.bid + ticker.ask) / 2,
           holding = holding,
           to = from)
-    }
+    })
 
     @inline def calcSellOrder(makerFees: List[FeeOption], price: Price, holding: Holding, to: Currency): SellOrder = {
       val fee = makerFees
