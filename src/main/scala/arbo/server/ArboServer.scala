@@ -1,7 +1,6 @@
 package arbo
 package server
 
-import cats.implicits._
 import cats.effect.{ConcurrentEffect, Timer}
 import fs2.Stream
 import org.http4s.client.blaze.BlazeClientBuilder
@@ -25,9 +24,7 @@ object ArboServer {
       // want to extract a segments not checked
       // in the underlying routes.
       httpApp = (
-        ArboRoutes.helloWorldRoutes[F](helloWorldAlg) <+>
-        ArboRoutes.arbitrageOptions[F](krakenAlg) <+>
-        ArboRoutes.jokeRoutes[F](jokeAlg)
+        ArboRoutes.arbitrageOptions[F](krakenAlg)
       ).orNotFound
 
       // With Middlewares in place
