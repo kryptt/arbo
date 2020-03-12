@@ -2,8 +2,7 @@ package arbo
 
 import cats.{Applicative, Functor, Monad}
 import cats.data.NonEmptyList
-import cats.syntax.functor._
-import cats.syntax.reducible._
+import cats.implicits._
 
 import higherkindness.droste
 import droste.Algebra
@@ -27,7 +26,8 @@ object Calculator {
   def optionsCoalgebra[M[_]: Applicative](sellOptions: GetSellOptions[M], terminalCurrency: Currency, maxDepth: Depth): ElgotCoalgebraM[M, Either[SellStep, *], SellTree, SellSeed] = {
     ElgotCoalgebraM[M, Either[SellStep, *], SellTree, SellSeed] {
       case (_, _, _, depth) if depth > maxDepth =>
-        Applicative[M].pure(Left(_ => noSale(s"maximum search depth ($maxDepth) exceeded")))
+        val excededSel = noSale(s"maximum search depth ($maxDepth) exceeded")
+        Applicative[M].pure(Left(_ => excededSel))
       case (Some(pOrder), holding, _, depth) if holding.currency == terminalCurrency =>
         Applicative[M].pure(Right(TerminalNode(pOrder, depth)))
       case (pOrderOpt, holding, past, depth) =>
@@ -46,11 +46,13 @@ object Calculator {
   @inline def initialSeed(holding: Holding): SellSeed =
     (None, holding, Map.empty, 0)
 
-  @inline def buildChildren[L, M[_]: Functor](sellOptions: GetSellOptions[M], pOrderOpt: Option[SellOrder], holding: Holding, past: PastHoldings, depth: Depth): M[Either[L, SellTree[SellSeed]]] = {
+  @inline def buildChildren[M[_]: Functor](sellOptions: GetSellOptions[M], pOrderOpt: Option[SellOrder], holding: Holding, past: PastHoldings, depth: Depth): M[Either[SellStep, SellTree[SellSeed]]] = {
     val pOrder = ensurePreviousOrder(pOrderOpt, holding)
     sellOptions(holding)
       .map(_.flatMap(nextSeed(past, depth)) match {
-             case Nil => Right(TerminalNode(pOrder, depth))
+             case Nil =>
+               val exhaustedOptions = noSale(s"options exhausted after digging $depth levels through $past")
+               Left(_ => exhaustedOptions)
              case next =>
                val (chld, holds) = next.unzip
                val firstChild :: otherChildren = seedPast.modify(_ ++ holds)(chld)
@@ -72,8 +74,7 @@ object Calculator {
     pOrderOpt.getOrElse(SellOrder.emptyOrder(holding))
 
   @inline def terminalNodeStep(lastOrder: SellOrder): SellSelection => SellSelection = {
-    case sp@SellPath(orders) =>
-      lastSelection(lastOrder, sp, orders)
+    case sp@SellPath(orders) => lastSelection(lastOrder, sp, orders)
     case _: InitialState => noSale("no sales selected")
     case ns: NoSale => ns
   }
@@ -88,12 +89,9 @@ object Calculator {
 
   @inline def lastSelection(lastOrder: SellOrder, sp: SellPath, orders: SellSequence): SellSelection = {
     val initAmmount = initialAmmount(sp)
-    val initCurrency = initialCurrency(sp)
     val finAmmount = SellOrder.toAmmount(lastOrder)
-    val finCurrency = lastOrder.to
     val profit = finAmmount.fold(BigDecimal(-1))(_ - initAmmount)
-    if (finCurrency != initCurrency) noSale("ends in a different currency")
-    else if (profit <= 0) noSale(s"no profit ($profit)")
+    if (profit <= 0) noSale(s"no profit ($profit)")
     else SellPath(orders :+ lastOrder)
   }
 
