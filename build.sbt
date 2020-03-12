@@ -1,10 +1,11 @@
-val Http4sVersion = "0.21.0"
+val Http4sVersion = "0.21.1"
 val DrosteVersion = "0.8.0"
 val CirceVersion = "0.13.0"
+val CirisVersion = "1.0.4"
 val CacheVersion = "0.28.0"
-val Specs2Version = "4.8.3"
+val Specs2Version = "4.9.2"
 val LogbackVersion = "1.2.3"
-val MonocleVersion = "2.0.1"
+val MonocleVersion = "2.0.4"
 
 enablePlugins(JavaAppPackaging, DockerPlugin)
 
@@ -20,6 +21,7 @@ lazy val root = (project in file("."))
       "org.http4s" %% "http4s-circe" % Http4sVersion,
       "org.http4s" %% "http4s-dsl" % Http4sVersion,
       "io.circe" %% "circe-generic" % CirceVersion,
+      "is.cir" %% "ciris" % CirisVersion,
       "com.github.cb372" %% "scalacache-caffeine" % CacheVersion,
       "com.github.cb372" %% "scalacache-cats-effect" % CacheVersion,
       "io.higherkindness" %% "droste-core" % DrosteVersion,
