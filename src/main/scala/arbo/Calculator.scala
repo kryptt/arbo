@@ -25,12 +25,12 @@ object Calculator {
 
   def optionsCoalgebra[M[_]: Applicative](sellOptions: GetSellOptions[M], terminalCurrency: Currency, maxDepth: Depth): ElgotCoalgebraM[M, Either[SellStep, *], SellTree, SellSeed] = {
     ElgotCoalgebraM[M, Either[SellStep, *], SellTree, SellSeed] {
-      case (_, _, depth) if depth > maxDepth =>
+      case (_, _, _, depth) if depth > maxDepth =>
         Applicative[M].pure(Left(_ => noSale(s"maximum search depth ($maxDepth) exceeded")))
-      case (Some(pOrder), holding, depth) if holding.currency == terminalCurrency =>
+      case (Some(pOrder), holding, _, depth) if holding.currency == terminalCurrency =>
         Applicative[M].pure(Right(TerminalNode(pOrder, depth)))
-      case (pOrderOpt, holding, depth) =>
-        buildChildren(sellOptions, pOrderOpt, holding, depth)
+      case (pOrderOpt, holding, past, depth) =>
+        buildChildren(sellOptions, pOrderOpt, holding, past, depth)
     }
   }
 
@@ -43,19 +43,26 @@ object Calculator {
     }
 
   @inline def initialSeed(holding: Holding): SellSeed =
-    (None, holding, 0)
+    (None, holding, Map.empty, 0)
 
-  @inline def buildChildren[L, M[_]: Functor](sellOptions: GetSellOptions[M], pOrderOpt: Option[SellOrder], holding: Holding, depth: Depth): M[Either[L, SellTree[SellSeed]]] = {
+  @inline def buildChildren[L, M[_]: Functor](sellOptions: GetSellOptions[M], pOrderOpt: Option[SellOrder], holding: Holding, past: PastHoldings, depth: Depth): M[Either[L, SellTree[SellSeed]]] = {
     val pOrder = ensurePreviousOrder(pOrderOpt, holding)
-    sellOptions(holding).map(_.flatMap(nextSeed(depth)) match {
+    sellOptions(holding).map(_.flatMap(nextSeed(past, depth)) match {
       case Nil => Right(TerminalNode(pOrder, depth))
       case firstChild :: otherChildren =>
         Right(SellNode(pOrder, depth, NonEmptyList(firstChild, otherChildren)))
     })
   }
 
-  @inline def nextSeed(depth: Depth): SellOrder => Option[SellSeed] =
-    (order: SellOrder) => SellOrder.nextHolding(order).map((Some(order), _, depth + 1))
+  @inline def nextSeed(past: PastHoldings, depth: Depth): SellOrder => Option[SellSeed] =
+    (order: SellOrder) =>
+  SellOrder.nextHolding(order).flatMap {
+    case next@Holding(to, ammount) =>
+      if (past.get(to).fold(true)(_ < ammount))
+        Some((Some(order), next, past + (to -> ammount), depth + 1))
+      else None
+  }
+
 
   @inline def ensurePreviousOrder(pOrderOpt: Option[SellOrder], holding: Holding): SellOrder =
     pOrderOpt.getOrElse(SellOrder.emptyOrder(holding))

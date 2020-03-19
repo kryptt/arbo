@@ -24,6 +24,8 @@ package object data {
 
   type Depth = Int
 
-  type SellSeed = (Option[SellOrder], Holding, Depth)
+  type PastHoldings = Map[Currency, Ammount]
+
+  type SellSeed = (Option[SellOrder], Holding, PastHoldings, Depth)
 
 }
