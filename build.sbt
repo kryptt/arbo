@@ -6,6 +6,8 @@ val Specs2Version = "4.8.3"
 val LogbackVersion = "1.2.3"
 val MonocleVersion = "2.0.1"
 
+enablePlugins(JavaAppPackaging, DockerPlugin)
+
 lazy val root = (project in file("."))
   .settings(
     organization := "co.arbo",
