@@ -3,7 +3,7 @@ package arbo.data
 import cats.{Applicative, Eval, Traverse}
 import cats.data.NonEmptyList
 
-sealed trait SellTree[+A]
+sealed trait SellTree[+A] extends Serializable
 
 object SellTree {
   case class SellNode[+A](order: SellOrder, depth: Depth, children: NonEmptyList[A]) extends SellTree[A]

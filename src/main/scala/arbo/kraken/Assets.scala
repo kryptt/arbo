@@ -8,7 +8,7 @@ import io.circe._
 
 import cats.data.NonEmptyList
 import cats.effect.Sync
-import cats.Order
+import cats.{Apply, Order}
 import cats.instances.either._
 import cats.instances.option._
 import cats.instances.string._
@@ -31,8 +31,7 @@ object FeeOption {
     @inline def err: Try[FeeOption] = Failure(FeeOptionArrayMismatchException)
     c.as[List[JsonNumber]].toTry.flatMap {
       case List(v, a) =>
-        (v.toInt, a.toBigDecimal)
-          .mapN(FeeOption.apply _)
+        Apply[Option].map2(v.toInt, a.toBigDecimal)(FeeOption.apply _)
           .fold(err)(Success(_))
       case _ => err
     }

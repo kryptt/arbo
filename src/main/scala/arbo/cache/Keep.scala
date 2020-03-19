@@ -7,7 +7,6 @@ import scalacache.caffeine._
 import cats.effect.{Async, Resource}
 import cats.effect.concurrent.{Semaphore, Ref}
 
-import cats.syntax.apply._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 
@@ -32,7 +31,7 @@ object Keep {
     val sem = Semaphore.uncancelable[F](1)
     val ref = eval.flatMap(ini => Ref.of(ini))
 
-    (sem, ref).mapN(run)
+    Async[F].map2(sem, ref)(run)
   }
 
   def cache[F[_]: Async, A]: Resource[F, Cache[A]] = {

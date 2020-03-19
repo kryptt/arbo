@@ -55,10 +55,10 @@ object RestClient {
       Calculator.selection(getSellOptions, "EUR", 6)(holding)
     }
 
-    def getSellOptions(holding: Holding): F[SellOptions] = for {
+    @inline def getSellOptions(holding: Holding): F[SellOptions] = for {
       fees <- assetPairs
       candidates = fees.filter { case (k, _) => k.from == holding.currency || k.to == holding.currency }
-      pairs <- NonEmptyList.fromList(candidates.keys.toList).fold[F[NonEmptyList[CurrencyPair]]](Async[F].raiseError(new Exception("no valid destination currencies")))(Async[F].pure)
+      pairs <- Async[F].fromOption(NonEmptyList.fromList(candidates.keys.toList), new Exception("no valid destination currencies"))
       rates <- ticker(pairs)
     } yield rates.toList.map {
       case (cp@CurrencyPair(from, to), ticker) if from == holding.currency =>
@@ -75,7 +75,7 @@ object RestClient {
           to = from)
     }
 
-    def calcSellOrder(makerFees: List[FeeOption], price: Price, holding: Holding, to: Currency): SellOrder = {
+    @inline def calcSellOrder(makerFees: List[FeeOption], price: Price, holding: Holding, to: Currency): SellOrder = {
       val fee = makerFees
           .findLast(_.volume < userVolume)
           .fold[Ammount](0.0024)(_.percentage / 100)

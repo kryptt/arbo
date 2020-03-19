@@ -2,12 +2,12 @@ package arbo.data
 
 import cats.data.NonEmptyList
 
-sealed trait SellSelection
+sealed trait SellSelection extends Any with Serializable
 
 object SellSelection {
-  case class InitialState(holding: Holding) extends SellSelection
-  case class SellPath(orders: SellSequence) extends SellSelection
-  case class NoSale(reasons: NonEmptyList[String]) extends SellSelection
+  case class InitialState(holding: Holding) extends AnyVal with SellSelection
+  case class SellPath(orders: SellSequence) extends AnyVal with SellSelection
+  case class NoSale(reasons: NonEmptyList[String]) extends AnyVal with SellSelection
 
   def init(holding: Holding): InitialState =
     InitialState(holding)

@@ -3,6 +3,7 @@ package arbo
 import cats.{Applicative, Functor, Monad}
 import cats.data.NonEmptyList
 import cats.syntax.functor._
+import cats.syntax.reducible._
 
 import higherkindness.droste
 import droste.Algebra
@@ -44,9 +45,6 @@ object Calculator {
   @inline def initialSeed(holding: Holding): SellSeed =
     (None, holding, 0)
 
-  @inline def nextSeed(depth: Depth): SellOrder => Option[SellSeed] =
-    (order: SellOrder) => SellOrder.nextHolding(order).map((Some(order), _, depth + 1))
-
   @inline def buildChildren[L, M[_]: Functor](sellOptions: GetSellOptions[M], pOrderOpt: Option[SellOrder], holding: Holding, depth: Depth): M[Either[L, SellTree[SellSeed]]] = {
     val pOrder = ensurePreviousOrder(pOrderOpt, holding)
     sellOptions(holding).map(_.flatMap(nextSeed(depth)) match {
@@ -55,6 +53,9 @@ object Calculator {
         Right(SellNode(pOrder, depth, NonEmptyList(firstChild, otherChildren)))
     })
   }
+
+  @inline def nextSeed(depth: Depth): SellOrder => Option[SellSeed] =
+    (order: SellOrder) => SellOrder.nextHolding(order).map((Some(order), _, depth + 1))
 
   @inline def ensurePreviousOrder(pOrderOpt: Option[SellOrder], holding: Holding): SellOrder =
     pOrderOpt.getOrElse(SellOrder.emptyOrder(holding))
@@ -86,7 +87,8 @@ object Calculator {
   }
 
   @inline def selectBestOutcome(outcomes: NonEmptyList[SellStep], sel: SellSelection): SellSelection =
-    outcomes.map(step => step(sel))
-      .reduceLeft(bestSell)
+    outcomes.reduceLeftTo(step => step(sel)) {
+      (s, step) => bestSell(s, step(sel))
+    }
 
 }

@@ -2,12 +2,12 @@ package arbo.data
 
 import monocle.macros.Lenses
 
-case class Holding(currency: Currency, ammount: Ammount)
+case class Holding(currency: Currency, ammount: Ammount) extends Serializable
 
-case class Fee(ammount: Ammount, currency: Currency)
+case class Fee(ammount: Ammount, currency: Currency) extends Serializable
 
 @Lenses
-case class SellOrder(from: Currency, to: Currency, price: Price, fromAmmount: Ammount, fee: Fee)
+case class SellOrder(from: Currency, to: Currency, price: Price, fromAmmount: Ammount, fee: Fee) extends Serializable
 
 object SellOrder {
 
