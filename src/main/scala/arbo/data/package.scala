@@ -8,6 +8,8 @@ package object data {
 
   type Ammount = BigDecimal
 
+  type HoldingTuple = (Currency, Ammount)
+
   type Holdings = List[Holding]
 
   type HoldingSequence = NonEmptyList[Holding]

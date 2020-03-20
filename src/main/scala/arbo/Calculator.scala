@@ -14,6 +14,7 @@ import elgot._
 object Calculator {
 
   import SellTree._
+  import SellSeed._
   import SellSelection._
 
   def selection[M[_]: Monad](sellOptions: GetSellOptions[M], terminalCurrency: Currency, maxDepth: Depth)(holding: Holding): M[SellSelection] =
@@ -47,19 +48,22 @@ object Calculator {
 
   @inline def buildChildren[L, M[_]: Functor](sellOptions: GetSellOptions[M], pOrderOpt: Option[SellOrder], holding: Holding, past: PastHoldings, depth: Depth): M[Either[L, SellTree[SellSeed]]] = {
     val pOrder = ensurePreviousOrder(pOrderOpt, holding)
-    sellOptions(holding).map(_.flatMap(nextSeed(past, depth)) match {
-      case Nil => Right(TerminalNode(pOrder, depth))
-      case firstChild :: otherChildren =>
-        Right(SellNode(pOrder, depth, NonEmptyList(firstChild, otherChildren)))
-    })
+    sellOptions(holding)
+      .map(_.flatMap(nextSeed(past, depth)) match {
+             case Nil => Right(TerminalNode(pOrder, depth))
+             case next =>
+               val (chld, holds) = next.unzip
+               val firstChild :: otherChildren = seedPast.modify(_ ++ holds)(chld)
+               Right(SellNode(pOrder, depth, NonEmptyList(firstChild, otherChildren)))
+           })
   }
 
-  @inline def nextSeed(past: PastHoldings, depth: Depth): SellOrder => Option[SellSeed] =
+  @inline def nextSeed(past: PastHoldings, depth: Depth): SellOrder => Option[(SellSeed, HoldingTuple)] =
     (order: SellOrder) =>
   SellOrder.nextHolding(order).flatMap {
     case next@Holding(to, ammount) =>
       if (past.get(to).fold(true)(_ < ammount))
-        Some((Some(order), next, past + (to -> ammount), depth + 1))
+        Some((Some(order), next, past, depth + 1) -> (to -> ammount))
       else None
   }
 
