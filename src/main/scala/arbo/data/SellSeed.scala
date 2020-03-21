@@ -8,6 +8,6 @@ import monocle.function.all._
 object SellSeed {
 
   val seedPast: Traversal[List[SellSeed], PastHoldings] =
-    each[List[SellSeed], SellSeed] composeLens _3
+    each[List[SellSeed], SellSeed].composeLens(_3)
 
 }

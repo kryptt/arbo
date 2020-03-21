@@ -16,12 +16,12 @@ object ArboServer {
   def stream[F[_]: ConcurrentEffect](implicit T: Timer[F]): Stream[F, Nothing] = {
     for {
       client <- BlazeClientBuilder[F](global)
-      .withSocketKeepAlive(true)
-      .withMaxTotalConnections(100)
-      .withConnectTimeout(1.minute)
-      .withResponseHeaderTimeout(5.minutes)
-      .withIdleTimeout(30.minutes)
-      .stream
+        .withSocketKeepAlive(true)
+        .withMaxTotalConnections(100)
+        .withConnectTimeout(1.minute)
+        .withResponseHeaderTimeout(5.minutes)
+        .withIdleTimeout(30.minutes)
+        .stream
       krakenAlg <- Stream.resource(kraken.RestClient[F](client))
 
       // Combine Service Routes into an HttpApp.
@@ -37,6 +37,7 @@ object ArboServer {
 
       exitCode <- BlazeServerBuilder[F]
         .bindHttp(9000, "0.0.0.0")
+        .withResponseHeaderTimeout(5.minutes)
         .withHttpApp(finalHttpApp)
         .serve
     } yield exitCode

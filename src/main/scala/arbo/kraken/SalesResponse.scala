@@ -5,10 +5,6 @@ import data.{Fee, Holding}
 
 case class SaleLine(holding: Holding, fee: Fee)
 
-object SaleLine {
+object SaleLine {}
 
-}
-
-object SalesResponse {
-
-}
+object SalesResponse {}

@@ -7,7 +7,8 @@ case class Holding(currency: Currency, ammount: Ammount) extends Serializable
 case class Fee(ammount: Ammount, currency: Currency) extends Serializable
 
 @Lenses
-case class SellOrder(from: Currency, to: Currency, price: Price, fromAmmount: Ammount, fee: Fee) extends Serializable
+case class SellOrder(from: Currency, to: Currency, price: Price, fromAmmount: Ammount, fee: Fee)
+    extends Serializable
 
 object SellOrder {
 
@@ -28,4 +29,3 @@ object SellOrder {
     SellOrder(holding.currency, holding.currency, 1, holding.ammount, Fee(0, holding.currency))
 
 }
-

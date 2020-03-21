@@ -5,7 +5,7 @@ import scalacache._
 import scalacache.caffeine._
 
 import cats.effect.{Async, Resource}
-import cats.effect.concurrent.{Semaphore, Ref}
+import cats.effect.concurrent.{Ref, Semaphore}
 
 import cats.syntax.flatMap._
 import cats.syntax.functor._

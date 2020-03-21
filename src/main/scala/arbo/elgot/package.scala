@@ -26,45 +26,43 @@ package object elgot {
   }
 
   object ElgotAlgebra extends scala.AnyRef {
-    def apply[E[_], F[_], A](f: E[F[A]] => A): ElgotAlgebra[E, F, A] = GAlgebra[Lambda[a => E[F[a]]], A, A](f)
+    def apply[E[_], F[_], A](f: E[F[A]] => A): ElgotAlgebra[E, F, A] =
+      GAlgebra[Lambda[a => E[F[a]]], A, A](f)
   }
 
   object ElgotAlgebraM extends scala.AnyRef {
-    def apply[M[_], E[_], F[_], A](f: E[F[A]] => M[A]): ElgotAlgebraM[M, E, F, A] = GAlgebraM[M, Lambda[a => E[F[a]]], A, A](f)
+    def apply[M[_], E[_], F[_], A](f: E[F[A]] => M[A]): ElgotAlgebraM[M, E, F, A] =
+      GAlgebraM[M, Lambda[a => E[F[a]]], A, A](f)
   }
 
-  def elgot[F[_] : Functor, A, B](
-    algebra: Algebra[F, B],
-    coalgebra: ElgotCoalgebra[Either[B, *], F, A]
+  def elgot[F[_]: Functor, A, B](
+      algebra: Algebra[F, B],
+      coalgebra: ElgotCoalgebra[Either[B, *], F, A]
   ): A => B =
-    kernel.hyloC[Either[B, *], F, A, B](
-      _.fold(identity[B], algebra.apply),
-      coalgebra.run)
+    kernel.hyloC[Either[B, *], F, A, B](_.fold(identity[B], algebra.apply), coalgebra.run)
 
   def elgotM[M[_]: Monad, F[_]: Traverse, A, B](
-  algebra: Algebra[F, B],
-  coalgebra: ElgotCoalgebraM[M, Either[B, *], F, A]):  A => M[B] =
+      algebra: Algebra[F, B],
+      coalgebra: ElgotCoalgebraM[M, Either[B, *], F, A]): A => M[B] =
     kernel.hyloMC[M, Either[B, *], F, A, B](_.fold(identity, algebra.apply).pure[M], coalgebra.run)
 
-  def coelgot[F[_] : Functor, A, B](
-    algebra: ElgotAlgebra[(A, *), F, B],
-    coalgebra: Coalgebra[F, A]
+  def coelgot[F[_]: Functor, A, B](
+      algebra: ElgotAlgebra[(A, *), F, B],
+      coalgebra: Coalgebra[F, A]
   ): A => B =
-    kernel.hyloC[(A, *), F, A, B](
-      algebra.run,
-      a => (a, coalgebra(a)))
+    kernel.hyloC[(A, *), F, A, B](algebra.run, a => (a, coalgebra(a)))
 
   def coelgotM[M[_]: Monad, F[_]: Traverse, A, B](
-                                                 algebra: ElgotAlgebraM[M, (A, *), F, B],
-                                                 coalgebra: Coalgebra[F, A]): A => M[B] =
+      algebra: ElgotAlgebraM[M, (A, *), F, B],
+      coalgebra: Coalgebra[F, A]): A => M[B] =
     kernel.hyloMC[M, (A, *), F, A, B](
       algebra.run,
-      (a:A) => (a, coalgebra(a)).pure[M]
+      (a: A) => (a, coalgebra(a)).pure[M]
     )
 
   // Anamorphism that allows shortcuts
-  def micro[F[_] : Functor, A, B](
-    coalgebra: ElgotCoalgebra[Either[B, *], F, A]
+  def micro[F[_]: Functor, A, B](
+      coalgebra: ElgotCoalgebra[Either[B, *], F, A]
   )(implicit embed: Embed[F, B]): A => B =
     elgot[F, A, B](embed.algebra, coalgebra)
 

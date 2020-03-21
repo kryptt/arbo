@@ -1,7 +1,6 @@
 package arbo.data
 
 import cats.data.NonEmptyList
-import cats.Semigroup
 
 sealed trait SellSelection extends Any with Serializable
 
@@ -40,10 +39,6 @@ object SellSelection {
   def appendToOrders(order: SellOrder, orders: NonEmptyList[SellOrder]): SellPath =
     SellPath(orders :+ order)
 
-  implicit val bestSellSelectionSemigroup = new Semigroup[SellSelection] {
-    def combine(a: SellSelection, b: SellSelection) = bestSell(a, b)
-  }
-
   def bestSell(left: SellSelection, right: SellSelection): SellSelection = {
 
     @inline def whenSameCurrency(left: SellPath, right: SellPath): SellSelection =
@@ -70,7 +65,8 @@ object SellSelection {
       case (_, right: SellPath) => right
       case (left, _: InitialState) => left
       case (_: InitialState, right) => right
-      case (NoSale(lReasons), NoSale(rReasons)) => NoSale(NonEmptyList(lReasons.head, List(rReasons.head)))
+      case (NoSale(lReasons), NoSale(rReasons)) =>
+        NoSale(NonEmptyList(lReasons.head, List(rReasons.head)))
     }
   }
 }
