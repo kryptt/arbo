@@ -1,3 +1,4 @@
+val CatsEffectsVersion = "2.1.2"
 val Http4sVersion = "0.21.1"
 val DrosteVersion = "0.8.0"
 val CirceVersion = "0.13.0"
@@ -22,6 +23,7 @@ lazy val root = (project in file("."))
       "org.http4s" %% "http4s-dsl" % Http4sVersion,
       "io.circe" %% "circe-generic" % CirceVersion,
       "is.cir" %% "ciris" % CirisVersion,
+      "org.typelevel" %% "cats-effect" % CatsEffectsVersion,
       "com.github.cb372" %% "scalacache-caffeine" % CacheVersion,
       "com.github.cb372" %% "scalacache-cats-effect" % CacheVersion,
       "io.higherkindness" %% "droste-core" % DrosteVersion,

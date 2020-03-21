@@ -13,7 +13,7 @@ import scala.concurrent.duration._
 
 object ArboServer {
 
-  def stream[F[_]: ConcurrentEffect](implicit T: Timer[F]): Stream[F, Nothing] = {
+  def stream[F[_]: ConcurrentEffect](kConfig: kraken.Config)(implicit T: Timer[F]): Stream[F, Nothing] = {
     for {
       client <- BlazeClientBuilder[F](global)
         .withSocketKeepAlive(true)
@@ -22,7 +22,7 @@ object ArboServer {
         .withResponseHeaderTimeout(5.minutes)
         .withIdleTimeout(30.minutes)
         .stream
-      krakenAlg <- Stream.resource(kraken.RestClient[F](client))
+      krakenAlg <- Stream.resource(kraken.RestClient[F](client, kConfig))
 
       // Combine Service Routes into an HttpApp.
       // Can also be done via a Router if you

@@ -34,6 +34,9 @@ object Keep {
     Async[F].map2(sem, ref)(run)
   }
 
+  def counter[F[_]: Async](): F[Ref[F, Long]] =
+    Ref.of(System.nanoTime())
+
   def cache[F[_]: Async, A]: Resource[F, Cache[A]] = {
     import CatsEffect.modes._
     Resource.make(Async[F].delay(CaffeineCache[A]))(_.close().void)
