@@ -31,13 +31,13 @@ trait RestClient[F[_]] {
 object RestClient {
 
   val baseURI = uri"https://api.kraken.com/0/public/"
-  val privateURI = uri"https://api.kraken.com/0/private/"
+  val privateBaseURI = uri"https://api.kraken.com/0/private/"
 
   val userVolume = 100000
 
   import scalacache.CatsEffect.modes.async
 
-  def apply[F[_]: Async](C: Client[F], config: Config): Resource[F, RestClient[F]] =
+  def apply[F[_]: Async](config: Config, C: Client[F]): Resource[F, RestClient[F]] =
     for {
       feeCache <- Keep.cache[F, FeesResponse]
       tickerCache <- Keep.cache[F, TickerResponse]
@@ -72,7 +72,7 @@ object RestClient {
                     "ordertype" -> "limit",
                     "price" -> orderPrice(order),
                     "volume" -> order.fromAmmount.toString),
-            privateURI / "AddOrder",
+            privateBaseURI / "AddOrder",
             Header("API-Key", config.apiKey),
             Header("API-Sign", config.privateKey)))
         .flatMap(C.expect[Json])
