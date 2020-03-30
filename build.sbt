@@ -7,6 +7,7 @@ val CacheVersion = "0.28.0"
 val Specs2Version = "4.9.2"
 val LogbackVersion = "1.2.3"
 val MonocleVersion = "2.0.4"
+val ScodecCoreVersion = "1.11.7"
 
 enablePlugins(JavaAppPackaging, DockerPlugin)
 
@@ -23,6 +24,7 @@ lazy val root = (project in file("."))
       "org.http4s" %% "http4s-dsl" % Http4sVersion,
       "io.circe" %% "circe-generic" % CirceVersion,
       "is.cir" %% "ciris" % CirisVersion,
+      "org.scodec" %% "scodec-core" % ScodecCoreVersion,
       "org.typelevel" %% "cats-effect" % CatsEffectsVersion,
       "com.github.cb372" %% "scalacache-caffeine" % CacheVersion,
       "com.github.cb372" %% "scalacache-cats-effect" % CacheVersion,
