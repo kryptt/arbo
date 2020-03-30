@@ -16,18 +16,18 @@ package object data {
 
   type Price = Ammount
 
-  type SellOptions = List[SellOrder]
+  type SellOptions[+O <: SellOrder] = List[O]
 
-  type SellSequence = NonEmptyList[SellOrder]
+  type SellSequence[+O <: SellOrder] = NonEmptyList[O]
 
-  type GetSellOptions[F[_]] = Holding => F[SellOptions]
+  type GetSellOptions[F[_], O <: SellOrder] = Holding => F[SellOptions[O]]
 
-  type SellStep = SellSelection => SellSelection
+  type SellStep[O <: SellOrder] = SellSelection[O] => SellSelection[O]
 
   type Depth = Int
 
   type PastHoldings = Map[Currency, Ammount]
 
-  type SellSeed = (Option[SellOrder], Holding, PastHoldings, Depth)
+  type SellSeed[+O <: SellOrder] = (Option[O], Holding, PastHoldings, Depth)
 
 }

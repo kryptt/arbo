@@ -7,7 +7,7 @@ import monocle.function.all._
 
 object SellSeed {
 
-  val seedPast: Traversal[List[SellSeed], PastHoldings] =
-    each[List[SellSeed], SellSeed].composeLens(_3)
+  def seedPast[O <: SellOrder]: Traversal[List[SellSeed[O]], PastHoldings] =
+    each[List[SellSeed[O]], SellSeed[O]].composeLens(_3)
 
 }

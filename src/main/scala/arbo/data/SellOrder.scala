@@ -4,7 +4,7 @@ import monocle.macros.Lenses
 
 case class Holding(currency: Currency, ammount: Ammount) extends Serializable
 
-case class Fee(ammount: Ammount, currency: Currency, isBase: Boolean) extends Serializable
+case class Fee(ammount: Ammount, currency: Currency) extends Serializable
 
 @Lenses
 case class SellOrder(from: Currency, to: Currency, price: Price, fromAmmount: Ammount, fee: Fee)
@@ -26,6 +26,6 @@ object SellOrder {
     Holding(order.from, order.fromAmmount)
 
   def emptyOrder(holding: Holding): SellOrder =
-    SellOrder(holding.currency, holding.currency, 1, holding.ammount, Fee(0, holding.currency, true))
+    SellOrder(holding.currency, holding.currency, 1, holding.ammount, Fee(0, holding.currency))
 
 }

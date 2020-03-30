@@ -2,46 +2,46 @@ package arbo.data
 
 import cats.data.NonEmptyList
 
-sealed trait SellSelection extends Any with Serializable
+sealed trait SellSelection[+O <: SellOrder] extends Any with Serializable
 
 object SellSelection {
-  case class InitialState(holding: Holding) extends AnyVal with SellSelection
-  case class SellPath(orders: SellSequence) extends AnyVal with SellSelection
-  case class NoSale(reasons: NonEmptyList[String]) extends AnyVal with SellSelection
+  case class InitialState(holding: Holding) extends AnyVal with SellSelection[Nothing]
+  case class SellPath[+O <: SellOrder](orders: SellSequence[O]) extends AnyVal with SellSelection[O]
+  case class NoSale(reasons: NonEmptyList[String]) extends AnyVal with SellSelection[Nothing]
 
   def init(holding: Holding): InitialState =
     InitialState(holding)
 
-  def initialCurrency(sp: SellPath): Currency =
+  def initialCurrency(sp: SellPath[SellOrder]): Currency =
     sp.orders.head.from
 
-  def initialAmmount(sp: SellPath): Ammount =
+  def initialAmmount(sp: SellPath[SellOrder]): Ammount =
     sp.orders.head.fromAmmount
 
-  def finalCurrency(sp: SellPath): Currency =
+  def finalCurrency(sp: SellPath[SellOrder]): Currency =
     sp.orders.last.to
 
-  def finalAmmount(sp: SellPath): Option[Ammount] =
+  def finalAmmount(sp: SellPath[SellOrder]): Option[Ammount] =
     SellOrder.toAmmount(sp.orders.last)
 
-  def finalHolding(sp: SellPath): Option[Holding] =
+  def finalHolding(sp: SellPath[SellOrder]): Option[Holding] =
     finalAmmount(sp).map(Holding(finalCurrency(sp), _))
 
   def noSale(reason: String): NoSale =
     NoSale(NonEmptyList.one(reason))
 
-  def firstOrder(order: SellOrder): SellPath =
+  def firstOrder[O <: SellOrder](order: O): SellPath[O] =
     SellPath(NonEmptyList.one(order))
 
-  def orders(os: NonEmptyList[SellOrder]): SellPath =
+  def orders[O <: SellOrder](os: NonEmptyList[O]): SellPath[O] =
     SellPath(os)
 
-  def appendToOrders(order: SellOrder, orders: NonEmptyList[SellOrder]): SellPath =
+  def appendToOrders[O <: SellOrder](order: O, orders: NonEmptyList[O]): SellPath[O] =
     SellPath(orders :+ order)
 
-  def bestSell(left: SellSelection, right: SellSelection): SellSelection = {
+  def bestSell[O <: SellOrder](left: SellSelection[O], right: SellSelection[O]): SellSelection[O] = {
 
-    @inline def whenSameCurrency(left: SellPath, right: SellPath): SellSelection =
+    @inline def whenSameCurrency(left: SellPath[O], right: SellPath[O]): SellSelection[O] =
       (finalAmmount(left), finalAmmount(right)) match {
         case (None, None) => noSale("incomplete sellPath")
         case (Some(_), None) => left
@@ -54,15 +54,15 @@ object SellSelection {
           else left
       }
 
-    @inline def whenSellPath(left: SellPath, right: SellPath): SellSelection =
+    @inline def whenSellPath(left: SellPath[O], right: SellPath[O]): SellSelection[O] =
       if (finalCurrency(left) != finalCurrency(right))
         noSale("unexpected finalCurrency mismatch")
       else whenSameCurrency(left, right)
 
     (left, right) match {
-      case (left: SellPath, right: SellPath) => whenSellPath(left, right)
-      case (left: SellPath, _) => left
-      case (_, right: SellPath) => right
+      case (left: SellPath[O], right: SellPath[O]) => whenSellPath(left, right)
+      case (left: SellPath[O], _) => left
+      case (_, right: SellPath[O]) => right
       case (left, _: InitialState) => left
       case (_: InitialState, right) => right
       case (NoSale(lReasons), NoSale(rReasons)) =>
