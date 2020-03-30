@@ -9,8 +9,9 @@ import fs2.Stream
 
 import cats.effect.{ExitCode, IO, IOApp, Resource}
 import cats.implicits._
-import fs2.Stream
+import fs2.{Stream, text}
 import ciris.{ConfigValue, env}
+import scodec.bits.ByteVector
 
 import scala.concurrent.ExecutionContext
 import java.util.concurrent.Executors
@@ -19,6 +20,7 @@ object Main extends IOApp {
 
   def run(args: List[String]) =
     Stream.eval(envConfig.load[IO])
+      .map(_.value)
       .zip(Stream.resource(mainEC))
       .flatMap(Function.tupled(ArboServer.stream[IO] _))
       .compile.drain.as(ExitCode.Success)
@@ -30,10 +32,18 @@ object Main extends IOApp {
     }
   }
 
-  def envConfig: ConfigValue[ApiConfig] =
-    (env("API_KEY"), env("PRIVATE_KEY")).parMapN(ApiConfig.apply)
+  def envConfig: ConfigValue[Secret[ApiConfig]] =
+    (env("API_KEY").redacted, envKey)
+      .parMapN(ApiConfig.apply)
+      .secret(ApiConfig.show)
 
-  def cfg: ConfigValue[kraken.Config] =
-    (env("API_KEY"), env("PRIVATE_KEY"))
-      .parMapN(kraken.Config)
+  def envKey: ConfigValue[ByteVector] =
+    env("PRIVATE_KEY").evalMap(
+      Stream.emit(_)
+        .covary[IO]
+        .through(text.base64Decode)
+        .compile
+        .to(ByteVector))
+      .redacted
+
 }
