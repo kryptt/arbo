@@ -12,14 +12,14 @@ import cats.implicits._
 
 object ArboRoutes {
 
-  import kraken.{RestClient => KrakenAPI, CurrencyPair}
+  import kraken.{RestClient => KrakenAPI, CurrencyPair, KrakenOrder}
 
   def arbitrageOptions[F[_]: Sync](K: KrakenAPI[F]): HttpRoutes[F] = {
     val dsl = new Http4sDsl[F] {}
     import dsl._
     import SellSelection._
 
-    val executeSelection: SellSelection => F[HoldingSequence] = {
+    val executeSelection: SellSelection[KrakenOrder] => F[HoldingSequence] = {
       case _: InitialState => Sync[F].raiseError(new Exception("No executions"))
       case SellPath(orders) => orders.traverse(K.execute)
       case NoSale(r) => Sync[F].raiseError(new Exception(r.toString))

@@ -24,14 +24,14 @@ import scala.concurrent.duration._
 trait RestClient[F[_]] {
   def assetPairs: F[FeesResponse]
   def ticker(pair: NonEmptyList[CurrencyPair]): F[TickerResponse]
-  def sales(holding: Holding): F[SellSelection]
-  def execute(order: SellOrder): F[Holding]
+  def sales(holding: Holding): F[SellSelection[KrakenOrder]]
+  def execute(order: KrakenOrder): F[Holding]
 }
 
 object RestClient {
 
+  val apiBaseURI = uri"https://api.kraken.com"
   val baseURI = uri"https://api.kraken.com/0/public/"
-  val privateBaseURI = uri"https://api.kraken.com/0/private/"
 
   val userVolume = 100000
 
@@ -41,7 +41,7 @@ object RestClient {
     for {
       feeCache <- Keep.cache[F, FeesResponse]
       tickerCache <- Keep.cache[F, TickerResponse]
-      salesCache <- Keep.cache[F, SellOptions]
+      salesCache <- Keep.cache[F, SellOptions[KrakenOrder]]
       nonce <- Resource.liftF(Keep.counter())
     } yield new RestClient[F] {
       val dsl = new Http4sClientDsl[F] {}
@@ -61,29 +61,27 @@ object RestClient {
           C.expect[TickerResponse](req)
         }
 
-      def sales(holding: Holding): F[SellSelection] =
+      def sales(holding: Holding): F[SellSelection[KrakenOrder]] =
         Calculator.selection(getSellOptions, "EUR", 6)(holding)
 
-      def execute(order: SellOrder): F[Holding] = nonce
+      def execute(order: KrakenOrder): F[Holding] = nonce
         .getAndUpdate(_+1)
-        .map(once =>
-          POST(
-            UrlForm("nonce" -> once.toString,
-                    "ordertype" -> "limit",
-                    "price" -> orderPrice(order),
-                    "volume" -> order.fromAmmount.toString),
-            privateBaseURI / "AddOrder",
+        .map { once =>
+          val data = UrlForm("nonce" -> once.toString,
+                             "pair" -> order.krakenPair,
+                             "ordertype" -> "limit",
+                             "price" -> order.krakenPrice,
+                             "volume" -> order.fromAmmount.toString)
+          val uri  = "/0/private/AddOrder"
+          val sign = config.privateKey.toString
+          POST(data, apiBaseURI / uri,
             Header("API-Key", config.apiKey),
-            Header("API-Sign", config.privateKey)))
+            Header("API-Sign", sign)) }
         .flatMap(C.expect[Json])
         .flatTap(js => Async[F].pure(println(js)))
         .as(SellOrder.originalHolding(order))
 
-      @inline def orderPrice(order: SellOrder): String =
-        (if (order.fee.isBase) order.price
-         else 1 / order.price).toString
-
-      @inline def getSellOptions(holding: Holding): F[SellOptions] =
+      @inline def getSellOptions(holding: Holding): F[SellOptions[KrakenOrder]] =
         salesCache.cachingF("sellOptions", holding)(Some(1.minute))(for {
           fees <- assetPairs
           candidates = fees.filter {
@@ -94,36 +92,25 @@ object RestClient {
             new Exception("no valid destination currencies"))
           rates <- ticker(pairs)
         } yield rates.toList.map {
-          case (cp @ CurrencyPair(from, to), ticker) if from == holding.currency =>
-            calcSellOrder(
-              makerFees = fees(cp).maker,
-              price = 2 / (ticker.bid + ticker.ask),
+          case (cp @ CurrencyPair(base, cvar), ticker) if base == holding.currency =>
+            Order.variableOrder(
+              fee = feeAmmount(fees(cp).maker),
+              basePrice = (ticker.bid + ticker.ask) / 2,
               holding = holding,
-              isBase = true,
-              to = to)
-          case (cp @ CurrencyPair(from, to), ticker) if to == holding.currency =>
-            calcSellOrder(
-              makerFees = fees(cp).maker,
-              price = (ticker.bid + ticker.ask) / 2,
+              to = cvar)
+          case (cp @ CurrencyPair(base, cvar), ticker) if cvar == holding.currency =>
+            Order.baseOrder(
+              fee = feeAmmount(fees(cp).maker),
+              basePrice = (ticker.bid + ticker.ask) / 2,
               holding = holding,
-              isBase = false,
-              to = from)
-        })
+              to = base)
+                                                                    })
 
-      @inline def calcSellOrder(
-          makerFees: List[FeeOption],
-          price: Price,
-          holding: Holding,
-          isBase: Boolean,
-          to: Currency): SellOrder = {
-        val fee = makerFees
+      @inline def feeAmmount(makerFees: List[FeeOption]): Ammount =
+        makerFees
           .findLast(_.volume < userVolume)
           .fold[Ammount](0.0024)(_.percentage / 100)
-        val from = holding.currency
-        val ammount = holding.ammount / (1 + fee)
-        val feeAmmount = ammount * fee
-        SellOrder(from, to, price, ammount, Fee(feeAmmount, from, isBase))
-      }
+
     }
 
 }
