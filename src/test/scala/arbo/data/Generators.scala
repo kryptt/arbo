@@ -36,7 +36,7 @@ object Generators {
   val sellOrderGen: Gen[SellOrder] =
     holdingGen.flatMap(genHoldingSellOrder)
 
-  def getSellOptionsGen(holding: Holding): Gen[SellOptions] =
+  def getSellOptionsGen(holding: Holding): Gen[SellOptions[SellOrder]] =
     Gen.listOf(genHoldingSellOrder(holding))
 
 }

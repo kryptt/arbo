@@ -24,7 +24,7 @@ class CalculatorSpec extends Specification with ScalaCheck {
 
   val initialHolding = Holding("EUR", 1000)
 
-  def noOptions(): MatchResult[SellSelection] = {
+  def noOptions(): MatchResult[SellSelection[SellOrder]] = {
     val tree = TerminalNode(SellOrder.emptyOrder(initialHolding), 0)
     val result = Calculator.optionsAlgebra
       .run(tree)
@@ -38,7 +38,7 @@ class CalculatorSpec extends Specification with ScalaCheck {
     beEqualTo(fH.currency) ^^ { (h: Holding) => h.currency }
 
   def threeHops(): MatchResult[Holding] = {
-    val sellOptions: GetSellOptions[Id] = {
+    val sellOptions: GetSellOptions[Id, SellOrder] = {
       case Holding("EUR", _) =>
         List(SellOrder("EUR", "BTC", 6500, 1000, Fee(0.12, "EUR")))
       case Holding("BTC", _) =>
@@ -48,19 +48,18 @@ class CalculatorSpec extends Specification with ScalaCheck {
       case Holding("ETH", _) =>
         List(SellOrder("ETH", "EUR", 0.006329114, 7.45649416, Fee(0.12, "EUR")))
       case _ => Nil
-
     }
 
     val fH = Holding("EUR", 1178.00606314)
 
-    val result = Calculator.selection(sellOptions, "EUR", 6)(initialHolding)
+    val result = Calculator.selection(sellOptions, "EUR", 3)(initialHolding)
     println(s"result: $result")
-    finalHolding(result.asInstanceOf[SellPath]).get must holdCloseTo(fH)
+    finalHolding(result.asInstanceOf[SellPath[SellOrder]]).get must holdCloseTo(fH)
   }
 
   val depthGen = Gen.chooseNum[Int](2, 100)
 
-  val calculatorGen: Gen[SellSelection] = for {
+  val calculatorGen: Gen[SellSelection[SellOrder]] = for {
     holding <- holdingGen
     maxDepth <- depthGen
     result <- Calculator.selection(getSellOptionsGen, holding.currency, maxDepth)(holding)
