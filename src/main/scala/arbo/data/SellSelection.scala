@@ -3,11 +3,24 @@ package arbo.data
 import cats.data.NonEmptyList
 import cats.Eq
 
+import monocle.Lens
+import monocle.function.all._
+
 sealed trait SellSelection[+O <: SellOrder] extends Any with Serializable
 
 object SellSelection {
   case class InitialState(holding: Holding) extends AnyVal with SellSelection[Nothing]
+
   case class SellPath[+O <: SellOrder](orders: SellSequence[O]) extends AnyVal with SellSelection[O]
+
+  object SellPath {
+    def orders[O <: SellOrder]: Lens[SellPath[O], SellSequence[O]] =
+      Lens[SellPath[O], SellSequence[O]](_.orders)(os => sp => sp.copy(orders = os))
+
+    def lastOrder[O <: SellOrder]: Lens[SellPath[O], O] =
+      orders[O].composeLens(last)
+  }
+
   case class NoSale(reasons: NonEmptyList[String]) extends AnyVal with SellSelection[Nothing]
 
   def init(holding: Holding): InitialState =

@@ -1,13 +1,16 @@
+val CacheVersion = "0.28.0"
 val CatsEffectsVersion = "2.1.2"
-val Http4sVersion = "0.21.1"
-val DrosteVersion = "0.8.0"
+val CatsVersion = "2.1.1"
 val CirceVersion = "0.13.0"
 val CirisVersion = "1.0.4"
-val CacheVersion = "0.28.0"
-val Specs2Version = "4.9.2"
+val DisciplineVersion = "1.1.0"
+val DrosteVersion = "0.8.0"
+val Http4sVersion = "0.21.2"
+val KindProjectorVersion = "0.11.0"
 val LogbackVersion = "1.2.3"
 val MonocleVersion = "2.0.4"
 val ScodecCoreVersion = "1.11.7"
+val Specs2Version = "4.9.2"
 
 enablePlugins(JavaAppPackaging, DockerPlugin)
 
@@ -33,11 +36,11 @@ lazy val root = (project in file("."))
       "com.github.julien-truffaut" %% "monocle-core" % MonocleVersion,
       "com.github.julien-truffaut" %% "monocle-macro" % MonocleVersion,
       "com.github.julien-truffaut" %% "monocle-law" % MonocleVersion % Test,
-      "org.typelevel" %% "cats-laws" % "2.1.1" % Test,
-      "org.typelevel" %% "discipline-specs2" % "1.1.0" % Test,
+      "org.typelevel" %% "cats-laws" % CatsVersion % Test,
+      "org.typelevel" %% "discipline-specs2" % DisciplineVersion % Test,
       "org.specs2" %% "specs2-scalacheck" % Specs2Version % Test,
       "ch.qos.logback" %  "logback-classic" % LogbackVersion
     ),
-    addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.0" cross CrossVersion.full),
+    addCompilerPlugin("org.typelevel" %% "kind-projector" % KindProjectorVersion cross CrossVersion.full),
     scalacOptions += "-Ymacro-annotations"
   )

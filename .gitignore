@@ -1,7 +1,8 @@
 **/target/
 /.bloop/
 /.idea/
-/.metals/
 /.jvmopts
+/.metals/
 /.sbtopts
+/project/metals.sbt
 /run.sh

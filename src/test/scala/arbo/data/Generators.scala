@@ -4,6 +4,7 @@ import org.scalacheck.Gen
 import org.scalacheck.cats.implicits._
 import cats.Applicative
 import cats.data.NonEmptyList
+import arbo.data.SellSelection._
 
 object Generators {
 
@@ -41,17 +42,16 @@ object Generators {
   def getSellOptionsGen(holding: Holding): Gen[SellOptions[SellOrder]] =
     Gen.listOf(genHoldingSellOrder(holding))
 
-  val sellSelectionGen: Gen[SellSelection[SellOrder]] = {
-    import SellSelection._
+  val sellPathGen: Gen[SellPath[SellOrder]] = Gen
+    .nonEmptyListOf(sellOrderGen)
+    .map(NonEmptyList.fromListUnsafe)
+    .map(orders)
+
+  val sellSelectionGen: Gen[SellSelection[SellOrder]] =
     Gen.oneOf("init", "path", "nosale").flatMap {
       case "init" => holdingGen.map(InitialState)
       case "nosale" => Gen.alphaStr.map(noSale)
-      case "path" =>
-        Gen
-          .nonEmptyListOf(sellOrderGen)
-          .map(NonEmptyList.fromListUnsafe)
-          .map(orders)
+      case "path" => sellPathGen
     }
-  }
 
 }
