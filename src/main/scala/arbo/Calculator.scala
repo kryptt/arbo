@@ -58,7 +58,7 @@ object Calculator {
       pOrderOpt: Option[O],
       holding: Holding,
       past: PastHoldings,
-      depth: Depth): M[Either[SellStep[O], SellTree[SellSeed[O], O]]] = {
+      depth: Depth): M[Either[SellStep[O], SellTree[SellSeed[O], O]]] =
     sellOptions(holding)
       .map(_.flatMap(nextSeed(past, depth)) match {
         case Nil =>
@@ -70,7 +70,6 @@ object Calculator {
           val firstChild :: otherChildren = seedPast.modify(_ ++ holds)(chld)
           Right(ensureTreeNode(pOrderOpt, depth, NonEmptyList(firstChild, otherChildren)))
       })
-  }
 
   @inline def nextSeed[O <: SellOrder](
       past: PastHoldings,
@@ -83,7 +82,10 @@ object Calculator {
           else None
       }
 
-  @inline def ensureTreeNode[A, O <: SellOrder](po: Option[O], depth: Int, ch: NonEmptyList[A]): SellTree[A, O]=
+  @inline def ensureTreeNode[A, O <: SellOrder](
+      po: Option[O],
+      depth: Int,
+      ch: NonEmptyList[A]): SellTree[A, O] =
     po.fold[SellTree[A, O]](RootNode(ch))(o => SellNode(o, depth, ch))
 
   @inline def terminalNodeStep[O <: SellOrder](lastOrder: O): SellSelection[O] => SellSelection[O] = {
@@ -92,7 +94,8 @@ object Calculator {
     case ns: NoSale => ns
   }
 
-  @inline def rootNodeStep[O <: SellOrder](outcomes: NonEmptyList[SellStep[O]]): SellSelection[O] => SellSelection[O] = {
+  @inline def rootNodeStep[O <: SellOrder](
+      outcomes: NonEmptyList[SellStep[O]]): SellSelection[O] => SellSelection[O] = {
     case is: InitialState =>
       selectBestOutcome(outcomes, is)
     case sp: SellPath[O] =>

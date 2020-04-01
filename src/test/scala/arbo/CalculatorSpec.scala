@@ -1,6 +1,7 @@
 package arbo
 
 import cats.Id
+import cats.syntax.partialOrder._
 
 import org.specs2.{ScalaCheck, Specification}
 import org.specs2.matcher.Matcher
@@ -34,8 +35,11 @@ class CalculatorSpec extends Specification with ScalaCheck {
   }
 
   def holdCloseTo(fH: Holding): Matcher[Holding] =
-    beCloseTo(fH.ammount, 8.significantFigures) ^^ { (h: Holding) => h.ammount } and
-    beEqualTo(fH.currency) ^^ { (h: Holding) => h.currency }
+    (beCloseTo(fH.ammount, 8.significantFigures) ^^ { (h: Holding) =>
+      h.ammount
+    }).and(beEqualTo(fH.currency) ^^ { (h: Holding) =>
+      h.currency
+    })
 
   def threeHops(): MatchResult[Holding] = {
     val sellOptions: GetSellOptions[Id, SellOrder] = {
@@ -52,21 +56,27 @@ class CalculatorSpec extends Specification with ScalaCheck {
 
     val fH = Holding("EUR", 1178.00606314)
 
-    val result = Calculator.selection(sellOptions, "EUR", 3)(initialHolding)
-    println(s"result: $result")
+    val result = Calculator.selection(sellOptions, "EUR", 4)(initialHolding)
     finalHolding(result.asInstanceOf[SellPath[SellOrder]]).get must holdCloseTo(fH)
   }
 
-  val depthGen = Gen.chooseNum[Int](2, 100)
+  val depthGen = Gen.chooseNum[Int](2, 12)
 
-  val calculatorGen: Gen[SellSelection[SellOrder]] = for {
+  val calculatorGen: Gen[(Holding, Int, SellSelection[SellOrder])] = for {
     holding <- holdingGen
     maxDepth <- depthGen
     result <- Calculator.selection(getSellOptionsGen, holding.currency, maxDepth)(holding)
-  } yield result
+  } yield (holding, maxDepth, result)
 
-  val calcProperty = Prop.forAll(calculatorGen) { result =>
-    println(s"result: $result")
-    result != null
-  }.set(minTestsOk = 1000, workers = 10, maxSize = 6)
+  val calcProperty = Prop
+    .forAll(calculatorGen) {
+      case (holding, depth, InitialState(h)) =>
+        h == holding && depth < 2
+      case (holding, depth, sp @ SellPath(os)) =>
+        val h = SellSelection.finalHolding(sp)
+        os.length <= depth && h.fold(false)(_ >= holding)
+      case _ => true
+
+    }
+    .set(minTestsOk = 100, workers = 10, maxSize = 6)
 }

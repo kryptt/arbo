@@ -1,8 +1,21 @@
 package arbo.data
 
+import cats.kernel.PartialOrder
+
 import monocle.macros.Lenses
 
+@Lenses
 case class Holding(currency: Currency, ammount: Ammount) extends Serializable
+
+object Holding {
+
+  implicit val holdingPartialOrder = new PartialOrder[Holding] {
+    def partialCompare(a: Holding, b: Holding): Double =
+      if (a.currency == b.currency) (a.ammount.toDouble - b.ammount.toDouble)
+      else Double.NaN
+  }
+
+}
 
 case class Fee(ammount: Ammount, currency: Currency) extends Serializable
 

@@ -1,6 +1,7 @@
 package arbo.data
 
 import cats.data.NonEmptyList
+import cats.Eq
 
 sealed trait SellSelection[+O <: SellOrder] extends Any with Serializable
 
@@ -39,7 +40,9 @@ object SellSelection {
   def appendToOrders[O <: SellOrder](order: O, orders: NonEmptyList[O]): SellPath[O] =
     SellPath(orders :+ order)
 
-  def bestSell[O <: SellOrder](left: SellSelection[O], right: SellSelection[O]): SellSelection[O] = {
+  def bestSell[O <: SellOrder](
+      left: SellSelection[O],
+      right: SellSelection[O]): SellSelection[O] = {
 
     @inline def whenSameCurrency(left: SellPath[O], right: SellPath[O]): SellSelection[O] =
       (finalAmmount(left), finalAmmount(right)) match {
@@ -68,5 +71,12 @@ object SellSelection {
       case (NoSale(lReasons), NoSale(rReasons)) =>
         NoSale(NonEmptyList(lReasons.head, List(rReasons.head)))
     }
+  }
+
+  implicit val eqSellSelection: Eq[SellSelection[SellOrder]] = Eq.instance {
+    case (_: NoSale, _: NoSale) => true
+    case (InitialState(a), InitialState(b)) => a == b
+    case (SellPath(as), SellPath(bs)) => as == bs
+    case _ => false
   }
 }

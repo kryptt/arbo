@@ -15,7 +15,8 @@ import scala.concurrent.duration._
 
 object ArboServer {
 
-  def stream[F[_]: ConcurrentEffect](config: ApiConfig, clientEC: ExecutionContext)(implicit T: Timer[F]): Stream[F, Nothing] = {
+  def stream[F[_]: ConcurrentEffect](config: ApiConfig, clientEC: ExecutionContext)(
+      implicit T: Timer[F]): Stream[F, Nothing] = {
     for {
       client <- BlazeClientBuilder[F](clientEC)
         .withSocketKeepAlive(true)

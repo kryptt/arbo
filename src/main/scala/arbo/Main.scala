@@ -19,11 +19,14 @@ import java.util.concurrent.Executors
 object Main extends IOApp {
 
   def run(args: List[String]) =
-    Stream.eval(envConfig.load[IO])
+    Stream
+      .eval(envConfig.load[IO])
       .map(_.value)
       .zip(Stream.resource(mainEC))
       .flatMap(Function.tupled(ArboServer.stream[IO] _))
-      .compile.drain.as(ExitCode.Success)
+      .compile
+      .drain
+      .as(ExitCode.Success)
 
   def mainEC: Resource[IO, ExecutionContext] = Resource {
     IO.delay {
@@ -38,12 +41,14 @@ object Main extends IOApp {
       .secret(ApiConfig.show)
 
   def envKey: ConfigValue[ByteVector] =
-    env("PRIVATE_KEY").evalMap(
-      Stream.emit(_)
-        .covary[IO]
-        .through(text.base64Decode)
-        .compile
-        .to(ByteVector))
+    env("PRIVATE_KEY")
+      .evalMap(
+        Stream
+          .emit(_)
+          .covary[IO]
+          .through(text.base64Decode)
+          .compile
+          .to(ByteVector))
       .redacted
 
 }

@@ -32,8 +32,10 @@ lazy val root = (project in file("."))
       "io.chrisdavenport" %% "cats-scalacheck" % "0.2.0",
       "com.github.julien-truffaut" %% "monocle-core" % MonocleVersion,
       "com.github.julien-truffaut" %% "monocle-macro" % MonocleVersion,
-      "com.github.julien-truffaut" %% "monocle-law" % MonocleVersion % "test",
-      "org.specs2" %% "specs2-scalacheck" % Specs2Version % "test",
+      "com.github.julien-truffaut" %% "monocle-law" % MonocleVersion % Test,
+      "org.typelevel" %% "cats-laws" % "2.1.1" % Test,
+      "org.typelevel" %% "discipline-specs2" % "1.1.0" % Test,
+      "org.specs2" %% "specs2-scalacheck" % Specs2Version % Test,
       "ch.qos.logback" %  "logback-classic" % LogbackVersion
     ),
     addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.0" cross CrossVersion.full),

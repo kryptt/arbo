@@ -64,22 +64,23 @@ object RestClient {
       def sales(holding: Holding): F[SellSelection[KrakenOrder]] =
         Calculator.selection(getSellOptions, "EUR", 6)(holding)
 
-      def execute(order: KrakenOrder): F[Holding] = nonce
-        .getAndUpdate(_+1)
-        .map { once =>
-          val data = UrlForm("nonce" -> once.toString,
-                             "pair" -> order.krakenPair,
-                             "ordertype" -> "limit",
-                             "price" -> order.krakenPrice,
-                             "volume" -> order.fromAmmount.toString)
-          val uri  = "/0/private/AddOrder"
-          val sign = config.privateKey.toString
-          POST(data, apiBaseURI / uri,
-            Header("API-Key", config.apiKey),
-            Header("API-Sign", sign)) }
-        .flatMap(C.expect[Json])
-        .flatTap(js => Async[F].pure(println(js)))
-        .as(SellOrder.originalHolding(order))
+      def execute(order: KrakenOrder): F[Holding] =
+        nonce
+          .getAndUpdate(_ + 1)
+          .map { once =>
+            val data = UrlForm(
+              "nonce" -> once.toString,
+              "pair" -> order.krakenPair,
+              "ordertype" -> "limit",
+              "price" -> order.krakenPrice,
+              "volume" -> order.fromAmmount.toString)
+            val uri = "/0/private/AddOrder"
+            val sign = config.privateKey.toString
+            POST(data, apiBaseURI / uri, Header("API-Key", config.apiKey), Header("API-Sign", sign))
+          }
+          .flatMap(C.expect[Json])
+          .flatTap(js => Async[F].pure(println(js)))
+          .as(SellOrder.originalHolding(order))
 
       @inline def getSellOptions(holding: Holding): F[SellOptions[KrakenOrder]] =
         salesCache.cachingF("sellOptions", holding)(Some(1.minute))(for {
@@ -104,7 +105,7 @@ object RestClient {
               basePrice = (ticker.bid + ticker.ask) / 2,
               holding = holding,
               to = base)
-                                                                    })
+        })
 
       @inline def feeAmmount(makerFees: List[FeeOption]): Ammount =
         makerFees
