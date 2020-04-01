@@ -6,16 +6,21 @@ import org.specs2.Specification
 import cats.kernel.laws.discipline._
 import org.typelevel.discipline.specs2.Discipline
 import org.typelevel.discipline.Laws
-import cats.Semigroup
+import cats.{Id, Semigroup}
 import cats.instances.option._
+import cats.instances.int._
+import cats.instances.long._
+import cats.instances.double._
 import arbo.data.SellSelection.SellPath
 import cats.kernel.Eq
+import cats.laws.discipline.TraverseTests
 
 class DataSpec extends Specification with Discipline with Laws {
   def is = s2"""
     $holdingIsPartialOrder
     (- associativity) $sellSelectionIsSemigroup
     $sellPathSameFinalCurrencySemigroup
+    $sellTreeTraverse
 """
 
   implicit val holdingFCoGen: Cogen[Holding] = Cogen[BigDecimal].contramap(_.ammount)
@@ -25,6 +30,9 @@ class DataSpec extends Specification with Discipline with Laws {
 
   implicit val arbHolding = Arbitrary(Generators.holdingGen)
   implicit val arbSellSelection = Arbitrary(Generators.sellSelectionGen)
+  implicit val sellOrder = Arbitrary(Generators.sellOrderGen)
+
+  implicit def arbSellTree[A: Arbitrary] = Arbitrary(Generators.sellTreeGen[A])
 
   val eurSellPathGen = Generators.sellPathGen
     .map(SellPath.lastOrder.modify((o: SellOrder) => o.copy(to = "EUR", fee = Fee(0, "EUR"))))
@@ -46,5 +54,11 @@ class DataSpec extends Specification with Discipline with Laws {
       SemigroupTests[SellPath[SellOrder]](semigroup)
         .semigroup(Arbitrary(eurSellPathGen), eqInstance))
   }
+
+  def sellTreeTraverse =
+    checkAll(
+      "SellTree",
+      TraverseTests[SellTree[*, SellOrder]]
+        .traverse[Int, Long, Double, Int, Id, Option])
 
 }

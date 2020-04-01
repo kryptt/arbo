@@ -60,8 +60,6 @@ class CalculatorSpec extends Specification with ScalaCheck {
     finalHolding(result.asInstanceOf[SellPath[SellOrder]]).get must holdCloseTo(fH)
   }
 
-  val depthGen = Gen.chooseNum[Int](2, 12)
-
   val calculatorGen: Gen[(Holding, Int, SellSelection[SellOrder])] = for {
     holding <- holdingGen
     maxDepth <- depthGen

@@ -1,6 +1,8 @@
-package arbo.data
+package arbo
+package data
 
 import cats.kernel.PartialOrder
+import cats.Eq
 
 import monocle.macros.Lenses
 
@@ -40,5 +42,7 @@ object SellOrder {
 
   def emptyOrder(holding: Holding): SellOrder =
     SellOrder(holding.currency, holding.currency, 1, holding.ammount, Fee(0, holding.currency))
+
+  implicit val sellOrderEq: Eq[SellOrder] = Eq.fromUniversalEquals[SellOrder]
 
 }

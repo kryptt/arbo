@@ -1,4 +1,5 @@
-package arbo.data
+package arbo
+package data
 
 import cats.data.NonEmptyList
 import cats.Eq

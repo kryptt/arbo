@@ -1,12 +1,17 @@
-package arbo.data
+package arbo
+package data
 
-import org.scalacheck.Gen
+import org.scalacheck.{Arbitrary, Gen}
 import org.scalacheck.cats.implicits._
+
 import cats.Applicative
 import cats.data.NonEmptyList
-import arbo.data.SellSelection._
+import cats.syntax.apply._
 
 object Generators {
+
+  import SellSelection._
+  import SellTree._
 
   val currencyList = List("EUR", "XBT", "ETH", "USD", "ADA", "XMR", "XRP", "TZK", "USDT", "ETC")
 
@@ -53,5 +58,25 @@ object Generators {
       case "nosale" => Gen.alphaStr.map(noSale)
       case "path" => sellPathGen
     }
+
+  val depthGen = Gen.chooseNum[Int](2, 12)
+
+  def sellTreeGen[A: Arbitrary]: Gen[SellTree[A, SellOrder]] = {
+    val childGen =
+      Gen
+        .nonEmptyListOf(Arbitrary.arbitrary[A])
+        .map(NonEmptyList.fromListUnsafe)
+    Gen.oneOf("root", "node", "terminal").flatMap {
+      case "root" =>
+        childGen
+          .map(RootNode[A])
+      case "node" =>
+        (sellOrderGen, depthGen, childGen)
+          .mapN(SellNode[A, SellOrder])
+      case "terminal" =>
+        (sellOrderGen, depthGen)
+          .mapN(TerminalNode[SellOrder])
+    }
+  }
 
 }

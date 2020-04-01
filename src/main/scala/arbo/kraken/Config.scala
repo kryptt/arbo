@@ -1,4 +1,5 @@
-package arbo.kraken
+package arbo
+package kraken
 
 import scodec.bits.ByteVector
 import cats.Show

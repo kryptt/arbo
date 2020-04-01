@@ -1,6 +1,7 @@
-package arbo.data
+package arbo
+package data
 
-import cats.{Applicative, Eval, Traverse}
+import cats.{Applicative, Eq, Eval, Traverse}
 import cats.data.NonEmptyList
 
 sealed trait SellTree[+A, +O <: SellOrder] extends Serializable
@@ -34,4 +35,15 @@ object SellTree {
         case SellNode(_, _, ch) => ch.foldRight(lb)(f)
       }
     }
+
+  implicit def sellTreeEq[A: Eq, O <: SellOrder: Eq]: Eq[SellTree[A, O]] = Eq.instance {
+    case (RootNode(as), RootNode(bs)) =>
+      Eq.eqv(as, bs)
+    case (SellNode(ao, ad, as), SellNode(bo, bd, bs)) if ad == bd =>
+      Eq.eqv(ao, bo) && Eq.eqv(as, bs)
+    case (TerminalNode(ao, ad), TerminalNode(bo, bd)) if ad == bd =>
+      Eq.eqv(ao, bo)
+    case _ => false
+
+  }
 }
