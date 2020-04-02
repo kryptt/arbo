@@ -31,6 +31,13 @@ class VariableOrder(from: Currency, to: Currency, price: Price, fromAmmount: Amm
 }
 
 object Order {
+
+  def baseSell(so: SellOrder): BaseOrder =
+    new BaseOrder(so.from, so.to, so.price, so.fromAmmount, so.fee)
+
+  def varSell(so: SellOrder): VariableOrder =
+    new VariableOrder(so.from, so.to, so.price, so.fromAmmount, so.fee)
+
   def baseOrder(fee: Ammount, basePrice: Price, holding: Holding, to: Currency): BaseOrder = {
     val from = holding.currency
     val ammount = holding.ammount / (1 + fee)

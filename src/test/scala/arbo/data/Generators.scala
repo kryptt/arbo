@@ -53,30 +53,23 @@ object Generators {
     .map(orders)
 
   val sellSelectionGen: Gen[SellSelection[SellOrder]] =
-    Gen.oneOf("init", "path", "nosale").flatMap {
-      case "init" => holdingGen.map(InitialState)
-      case "nosale" => Gen.alphaStr.map(noSale)
-      case "path" => sellPathGen
-    }
+    Gen.oneOf(
+      holdingGen.map(InitialState),
+      sellPathGen,
+      Gen.alphaStr.map(noSale)
+    )
 
   val depthGen = Gen.chooseNum[Int](2, 12)
 
   def sellTreeGen[A: Arbitrary]: Gen[SellTree[A, SellOrder]] = {
-    val childGen =
-      Gen
-        .nonEmptyListOf(Arbitrary.arbitrary[A])
-        .map(NonEmptyList.fromListUnsafe)
-    Gen.oneOf("root", "node", "terminal").flatMap {
-      case "root" =>
-        childGen
-          .map(RootNode[A])
-      case "node" =>
-        (sellOrderGen, depthGen, childGen)
-          .mapN(SellNode[A, SellOrder])
-      case "terminal" =>
-        (sellOrderGen, depthGen)
-          .mapN(TerminalNode[SellOrder])
-    }
+    val childGen = Gen
+      .nonEmptyListOf(Arbitrary.arbitrary[A])
+      .map(NonEmptyList.fromListUnsafe)
+    Gen.oneOf(
+      childGen.map(RootNode[A]),
+      (sellOrderGen, depthGen, childGen).mapN(SellNode[A, SellOrder]),
+      (sellOrderGen, depthGen).mapN(TerminalNode[SellOrder])
+    )
   }
 
 }

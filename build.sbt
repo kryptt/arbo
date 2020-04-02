@@ -11,6 +11,7 @@ val LogbackVersion = "1.2.3"
 val MonocleVersion = "2.0.4"
 val ScodecCoreVersion = "1.11.7"
 val Specs2Version = "4.9.2"
+val CommonsCodecVersion = "1.14"
 
 enablePlugins(JavaAppPackaging, DockerPlugin)
 
@@ -39,6 +40,8 @@ lazy val root = (project in file("."))
       "org.typelevel" %% "cats-laws" % CatsVersion % Test,
       "org.typelevel" %% "discipline-specs2" % DisciplineVersion % Test,
       "org.specs2" %% "specs2-scalacheck" % Specs2Version % Test,
+      "org.specs2" %% "specs2-cats" % Specs2Version % Test,
+      "commons-codec" % "commons-codec" % CommonsCodecVersion % Test,
       "ch.qos.logback" %  "logback-classic" % LogbackVersion
     ),
     addCompilerPlugin("org.typelevel" %% "kind-projector" % KindProjectorVersion cross CrossVersion.full),
