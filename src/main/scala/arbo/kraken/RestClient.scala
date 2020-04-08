@@ -5,7 +5,7 @@ import data._
 
 import cache.Keep
 
-import org.http4s.{Header, UrlForm}
+import org.http4s.{Header, UrlForm, Uri}
 import org.http4s.Method._
 import org.http4s.client.Client
 import org.http4s.client.dsl.Http4sClientDsl
@@ -20,6 +20,7 @@ import cats.syntax.flatMap._
 import cats.syntax.functor._
 
 import scala.concurrent.duration._
+import org.http4s.Charset
 
 trait RestClient[F[_]] {
   def assetPairs: F[FeesResponse]
@@ -68,16 +69,24 @@ object RestClient {
         nonce
           .getAndUpdate(_ + 1)
           .map { once =>
+            val uri = "/0/private/AddOrder"
             val data = UrlForm(
               "nonce" -> once.toString,
+              "type" -> order.krakenType,
               "pair" -> order.krakenPair,
               "ordertype" -> "limit",
               "price" -> order.krakenPrice,
-              "volume" -> order.fromAmmount.toString)
-            val uri = "/0/private/AddOrder"
-            val sign = config.privateKey.toString
-            POST(data, apiBaseURI / uri, Header("API-Key", config.apiKey), Header("API-Sign", sign))
+              "volume" -> order.krakenVolume)
+            val sign = Security.sign(once, data, uri, config.privateKey)
+            val post = POST(data,
+                            Uri.unsafeFromString(apiBaseURI.toString + uri),
+                            Header("API-Key", config.apiKey),
+                            Header("API-Sign", sign))
+            println(order.getClass())
+            println(UrlForm.encodeString(Charset.`UTF-8`)(data))
+            post
           }
+          .flatTap(post => Async[F].pure(println(post)))
           .flatMap(C.expect[Json])
           .flatTap(js => Async[F].pure(println(js)))
           .as(SellOrder.originalHolding(order))

@@ -6,18 +6,28 @@ import data._
 sealed trait KrakenOrder extends SellOrder {
   def krakenPair: String
   def krakenPrice: String
+  def krakenVolume: String
+  def krakenType: String
+
+  @inline
+  protected final def krakenAmmount(n: Ammount): Ammount =
+    n.setScale(6, BigDecimal.RoundingMode.DOWN)
 }
 class BaseOrder(from: Currency, to: Currency, price: Price, fromAmmount: Ammount, fee: Fee)
     extends SellOrder(from, to, price, fromAmmount, fee)
     with KrakenOrder {
-  def krakenPair = from + to
-  def krakenPrice = price.toString
+  def krakenPair = to + from
+  def krakenPrice = krakenAmmount(price).toString
+  def krakenVolume = krakenAmmount(SellOrder.toAmmount(this).getOrElse(0)).toString()
+  def krakenType = "buy"
 }
 class VariableOrder(from: Currency, to: Currency, price: Price, fromAmmount: Ammount, fee: Fee)
     extends SellOrder(from, to, price, fromAmmount, fee)
     with KrakenOrder {
-  def krakenPair = to + from
-  def krakenPrice = (1 / price).toString
+  def krakenPair = from + to
+  def krakenPrice = krakenAmmount(1 / price).toString
+  def krakenVolume = krakenAmmount(fromAmmount).toString
+  def krakenType = "sell"
 }
 
 object Order {
