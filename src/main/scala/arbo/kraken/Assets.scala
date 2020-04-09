@@ -41,57 +41,65 @@ object FeeOption {
 
 }
 
-case class FeeOptions(
-    currency: Currency,
-    taker: NonEmptyList[FeeOption],
-    maker: List[FeeOption]
+case class AssetPairOptions(
+  pairDecimals: Int,
+  lotDecimals: Int,
+  volumeCurrency: Currency,
+  taker: NonEmptyList[FeeOption],
+  maker: List[FeeOption],
 )
 
-object FeeOptions {
+object AssetPairOptions {
 
-  implicit val feeOptionsDecoder: Decoder[FeeOptions] = new Decoder[FeeOptions] {
-    final def apply(c: HCursor): Decoder.Result[FeeOptions] =
+  implicit val feeOptionsDecoder: Decoder[AssetPairOptions] = new Decoder[AssetPairOptions] {
+    final def apply(c: HCursor): Decoder.Result[AssetPairOptions] =
       (
+        c.downField("pair_decimals").as[Int],
+        c.downField("lot_decimals").as[Int],
         c.downField("fee_volume_currency").as[Currency],
         c.downField("fees").as[NonEmptyList[FeeOption]],
         c.downField("fees_maker")
           .as[Option[List[FeeOption]]]
-          .map(_.getOrElse(Nil))).mapN(FeeOptions.apply _)
+          .map(_.getOrElse(Nil))).mapN(AssetPairOptions.apply _)
   }
 
 }
 
 case class CurrencyPair(
-    from: Currency,
-    to: Currency
-)
+    base: Currency,
+    cvar: Currency,
+    )
 
 object CurrencyPair {
 
   val cPattern = "([XZ]?\\w{3}(?:\\.d)?|DASH|ALGO|ATOM|USD[CT]|LINK|WAVES|NANO|PAXG|QTUM|SC)"
   val cRE = (cPattern * 2).r
 
-  implicit val cpOrder: Order[CurrencyPair] = Order.by(_.from)
+  implicit val cpOrder: Order[CurrencyPair] = Order.by(_.base)
 
   implicit val currencyPairKeyDecoder =
     KeyDecoder.instance(fromString _)
 
   def fromString(str: String): Option[CurrencyPair] = str match {
-    case cRE(from, to) => Some(CurrencyPair(from, to))
+    case cRE(base, cvar) => Some(CurrencyPair(base, cvar))
     case _ => None
   }
 
-  def toKraken(cp: CurrencyPair) = cp.from + cp.to
+  def holds(cp: CurrencyPair, h: Holding): Boolean =
+    cp.base == h.currency || cp.cvar  == h.currency
+
+
+  def toKraken(cp: CurrencyPair): String = cp.base + cp.cvar
 
 }
 
-object FeesResponse {
-  implicit val feesResponseDecoder: Decoder[FeesResponse] = new Decoder[FeesResponse] {
-    final def apply(c: HCursor): Decoder.Result[FeesResponse] =
-      c.downField("result").as(Decoder.decodeMap[CurrencyPair, FeeOptions])
+object AssetPairsInfo {
+  implicit val feesResponseDecoder: Decoder[AssetPairsInfo] = new Decoder[AssetPairsInfo] {
+    final def apply(c: HCursor): Decoder.Result[AssetPairsInfo] =
+      c.downField("result").as(Decoder.decodeMap[CurrencyPair, AssetPairOptions])
   }
 
-  implicit def feesResponseEntityDecoder[F[_]: Sync]: EntityDecoder[F, FeesResponse] =
+  implicit def feesResponseEntityDecoder[F[_]: Sync]: EntityDecoder[F, AssetPairsInfo] =
     jsonOf
 
 }

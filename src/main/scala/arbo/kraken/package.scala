@@ -4,7 +4,7 @@ import io.circe.Json
 
 package object kraken {
 
-  type FeesResponse = Map[CurrencyPair, FeeOptions]
+  type AssetPairsInfo = Map[CurrencyPair, AssetPairOptions]
 
   type TickerResponse = Map[CurrencyPair, Ticker]
 

@@ -23,7 +23,7 @@ import scala.concurrent.duration._
 import org.http4s.Charset
 
 trait RestClient[F[_]] {
-  def assetPairs: F[FeesResponse]
+  def assetPairs: F[AssetPairsInfo]
   def ticker(pair: NonEmptyList[CurrencyPair]): F[TickerResponse]
   def sales(holding: Holding): F[SellSelection[KrakenOrder]]
   def execute(order: KrakenOrder): F[Holding]
@@ -40,7 +40,7 @@ object RestClient {
 
   def apply[F[_]: Async](config: Config, C: Client[F]): Resource[F, RestClient[F]] =
     for {
-      feeCache <- Keep.cache[F, FeesResponse]
+      feeCache <- Keep.cache[F, AssetPairsInfo]
       tickerCache <- Keep.cache[F, TickerResponse]
       salesCache <- Keep.cache[F, SellOptions[KrakenOrder]]
       nonce <- Resource.liftF(Keep.counter())
@@ -48,10 +48,10 @@ object RestClient {
       val dsl = new Http4sClientDsl[F] {}
       import dsl._
 
-      def assetPairs: F[FeesResponse] = feeCache.cachingF("krakenKeeps")(Some(1.day)) {
-        import FeesResponse._
-        val req = GET(baseURI / "AssetPairs" +? ("info", "fees"))
-        C.expect[FeesResponse](req)
+      def assetPairs: F[AssetPairsInfo] = feeCache.cachingF("krakenAssetPairs")(Some(1.day)) {
+        import AssetPairsInfo._
+        val req = GET(baseURI / "AssetPairs" +? ("info", "info"))
+        C.expect[AssetPairsInfo](req)
       }
 
       def ticker(pairs: NonEmptyList[CurrencyPair]): F[TickerResponse] =
@@ -75,8 +75,8 @@ object RestClient {
               "type" -> order.krakenType,
               "pair" -> order.krakenPair,
               "ordertype" -> "limit",
-              "price" -> order.krakenPrice,
-              "volume" -> order.krakenVolume)
+              "price" -> order.krakenPrice.toString,
+              "volume" -> order.krakenVolume.toString)
             val sign = Security.sign(once, data, uri, config.privateKey)
             val post = POST(data,
                             Uri.unsafeFromString(apiBaseURI.toString + uri),
@@ -95,7 +95,7 @@ object RestClient {
         salesCache.cachingF("sellOptions", holding)(Some(1.minute))(for {
           fees <- assetPairs
           candidates = fees.filter {
-            case (k, _) => k.from == holding.currency || k.to == holding.currency
+            case (k, _) => CurrencyPair.holds(k, holding)
           }
           pairs <- Async[F].fromOption(
             NonEmptyList.fromList(candidates.keys.toList),
@@ -103,14 +103,18 @@ object RestClient {
           rates <- ticker(pairs)
         } yield rates.toList.map {
           case (cp @ CurrencyPair(base, cvar), ticker) if base == holding.currency =>
+            val opts = fees(cp)
             Order.variableOrder(
-              fee = feeAmmount(fees(cp).maker),
+              opts,
+              fee = feeAmmount(opts.maker),
               basePrice = (ticker.bid + ticker.ask) / 2,
               holding = holding,
               to = cvar)
           case (cp @ CurrencyPair(base, cvar), ticker) if cvar == holding.currency =>
+            val opts = fees(cp)
             Order.baseOrder(
-              fee = feeAmmount(fees(cp).maker),
+              opts,
+              fee = feeAmmount(opts.maker),
               basePrice = (ticker.bid + ticker.ask) / 2,
               holding = holding,
               to = base)
