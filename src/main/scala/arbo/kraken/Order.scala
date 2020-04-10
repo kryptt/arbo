@@ -3,12 +3,10 @@ package kraken
 
 import data._
 
-import BigDecimal.RoundingMode.{DOWN => RoundDown}
-
 sealed trait KrakenOrder extends SellOrder {
   def krakenPair: String
-  def krakenPrice: Price
-  def krakenVolume: Ammount
+  def krakenPrice: String
+  def krakenVolume: String
   def krakenType: String
 }
 
@@ -16,28 +14,28 @@ class BaseOrder(from: Currency, to: Currency, price: Price, fromAmmount: Ammount
     extends SellOrder(from, to, price, fromAmmount, fee)
     with KrakenOrder {
   def krakenPair = to + from
-  def krakenPrice = price.setScale(pairDecimals, RoundDown)
-  def krakenVolume = SellOrder.toAmmount(this)
-    .getOrElse(BigDecimal(0))
-    .setScale(lotDecimals, RoundDown)
+  def krakenPrice = s"%.${pairDecimals}f".format(price)
+  def krakenVolume = s"%.${lotDecimals}f".format(SellOrder.toAmmount(this).getOrElse(BigDecimal(0)))
   def krakenType = "buy"
+  override def toString() = s"BaseOrder($from, $to, ${price.underlying.toPlainString()}, ${fromAmmount.underlying.toPlainString()})"
 }
 class VariableOrder(from: Currency, to: Currency, price: Price, fromAmmount: Ammount, fee: Fee, pairDecimals: Int, lotDecimals: Int)
     extends SellOrder(from, to, price, fromAmmount, fee)
     with KrakenOrder {
   def krakenPair = from + to
-  def krakenPrice = (1 / price).setScale(pairDecimals, RoundDown)
-  def krakenVolume = fromAmmount.setScale(lotDecimals, RoundDown)
+  def krakenPrice = s"%.${pairDecimals}f".format(1 / price)
+  def krakenVolume = s"%.${lotDecimals}f".format(fromAmmount)
   def krakenType = "sell"
+  override def toString() = s"VariableOrder($from, $to, ${price.underlying.toPlainString()}, ${fromAmmount.underlying.toPlainString()})"
 }
 
 object Order {
 
-  def baseSell(so: SellOrder): BaseOrder =
-    new BaseOrder(so.from, so.to, so.price, so.fromAmmount, so.fee, 8, 8)
+  def baseSell(so: SellOrder, pairDecimals: Int, lotDecimals: Int): BaseOrder =
+    new BaseOrder(so.from, so.to, so.price, so.fromAmmount, so.fee, pairDecimals, lotDecimals)
 
-  def varSell(so: SellOrder): VariableOrder =
-    new VariableOrder(so.from, so.to, so.price, so.fromAmmount, so.fee, 8, 8)
+  def varSell(so: SellOrder, pairDecimals: Int, lotDecimals: Int): VariableOrder =
+    new VariableOrder(so.from, so.to, so.price, so.fromAmmount, so.fee, pairDecimals, lotDecimals)
 
   def baseOrder(
     opts: AssetPairOptions,

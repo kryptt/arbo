@@ -55,7 +55,8 @@ class RestClientSpec
 
   def signedReq =
     Prop
-      .forAll(orderGen) { order =>
+      .forAll(orderGen) {
+        case (order, _, _) =>
         val sentKey: IO[Option[String]] = for {
           rc <- recordingCli
           (defferedRequest, cli) = rc

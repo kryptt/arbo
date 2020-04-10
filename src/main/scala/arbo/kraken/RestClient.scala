@@ -75,8 +75,8 @@ object RestClient {
               "type" -> order.krakenType,
               "pair" -> order.krakenPair,
               "ordertype" -> "limit",
-              "price" -> order.krakenPrice.toString,
-              "volume" -> order.krakenVolume.toString)
+              "price" -> order.krakenPrice,
+              "volume" -> order.krakenVolume)
             val sign = Security.sign(once, data, uri, config.privateKey)
             val post = POST(data,
                             Uri.unsafeFromString(apiBaseURI.toString + uri),
