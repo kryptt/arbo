@@ -6,6 +6,9 @@ import cats.Eq
 
 import monocle.macros.Lenses
 
+import scala.util.Try
+import scala.math.BigDecimal.RoundingMode.FLOOR
+
 @Lenses
 case class Holding(currency: Currency, ammount: Ammount) extends Serializable
 
@@ -27,12 +30,16 @@ case class SellOrder(from: Currency, to: Currency, price: Price, fromAmmount: Am
 
 object SellOrder {
 
-  def toAmmount(order: SellOrder): Option[Ammount] =
+  def toAmmount(order: SellOrder): Option[Ammount] = Try {
     if (order.fee.currency == order.to)
-      Some((order.fromAmmount / order.price) - order.fee.ammount)
+      ((order.fromAmmount / order.price) - order.fee.ammount)
     else if (order.fee.currency == order.from)
-      Some((order.fromAmmount - order.fee.ammount) / order.price)
-    else None
+      ((order.fromAmmount - order.fee.ammount) / order.price)
+    else ???
+  }
+    .map(_.setScale(order.fromAmmount.scale, FLOOR))
+    .filter(_ > 0)
+    .toOption
 
   def nextHolding(order: SellOrder): Option[Holding] =
     toAmmount(order).map(Holding(order.to, _))
