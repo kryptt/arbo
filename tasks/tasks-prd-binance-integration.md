@@ -1,8 +1,16 @@
 ## Relevant Files
+- `src/main/scala/arbo/exchanges/Exchange.scala` - Abstract trait defining unified exchange interface for both Kraken and Binance
+- `src/main/scala/arbo/exchanges/ExchangeHealth.scala` - Exchange health status data model for monitoring
+- `src/main/scala/arbo/exchanges/ExchangeRegistry.scala` - Multi-exchange management with health monitoring and registration logic
+- `src/main/scala/arbo/exchanges/ExchangeSelector.scala` - Exchange selection criteria and scoring logic
+- `src/main/scala/arbo/exchanges/CircuitBreaker.scala` - Circuit breaker pattern for automatic exchange disabling/re-enabling
 
 - `src/main/scala/arbo/exchanges/Exchange.scala` - Abstract trait defining unified exchange interface for both Kraken and Binance
 - `src/main/scala/arbo/exchanges/ExchangeRegistry.scala` - Multi-exchange management with health monitoring and registration logic  
 - `src/main/scala/arbo/exchanges/ExchangeHealth.scala` - Exchange health status data model for monitoring
+- `src/main/scala/arbo/exchanges/ExchangeRegistry.scala` - Multi-exchange management with health monitoring and registration logic
+- `src/main/scala/arbo/exchanges/ExchangeSelector.scala` - Exchange selection criteria and scoring logic
+- `src/main/scala/arbo/exchanges/CircuitBreaker.scala` - Circuit breaker pattern for automatic exchange disabling/re-enabling
 - `src/main/scala/arbo/binance/Config.scala` - Binance configuration with API key/secret and Show instance for redaction
 - `src/main/scala/arbo/binance/RestClient.scala` - Binance API client following existing RestClient trait pattern
 - `src/main/scala/arbo/binance/Order.scala` - Binance order types extending SellOrder with LIMIT, MARKET, STOP_LOSS variants
@@ -31,12 +39,12 @@
 
 ## Tasks
 
-- [ ] 1.0 Create Exchange Abstraction Layer
-  - [ ] 1.1 Create `Exchange[F[_]]` trait with name, supportedPairs, getSellOptions, execute, healthCheck methods
-  - [ ] 1.2 Implement `ExchangeHealth` data model with status, latency, errorRate, lastChecked fields
-  - [ ] 1.3 Create `ExchangeRegistry[F[_]]` for managing multiple exchange instances with registration and health monitoring
-  - [ ] 1.4 Implement exchange selection logic considering profit, fees, response times, and success rates
-  - [ ] 1.5 Add circuit breaker pattern for automatic exchange disabling/re-enabling based on health metrics
+- [x] 1.0 Create Exchange Abstraction Layer
+  - [x] 1.1 Create `Exchange[F[_]]` trait with name, supportedPairs, getSellOptions, execute, healthCheck methods
+  - [x] 1.2 Implement `ExchangeHealth` data model with status, latency, errorRate, lastChecked fields
+  - [x] 1.3 Create `ExchangeRegistry[F[_]]` for managing multiple exchange instances with registration and health monitoring
+  - [x] 1.4 Implement exchange selection logic considering profit, fees, response times, and success rates
+  - [x] 1.5 Add circuit breaker pattern for automatic exchange disabling/re-enabling based on health metrics
 
 - [ ] 2.0 Implement Binance Exchange Integration
   - [ ] 2.1 Create `BinanceConfig` case class with apiKey, secretKey, testnet fields and Show instance for credential redaction
