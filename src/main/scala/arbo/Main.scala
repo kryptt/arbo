@@ -1,6 +1,7 @@
 package arbo
 
-import kraken.{Config => ApiConfig}
+import kraken.{Config => KrakenApiConfig}
+import exchanges.{ExchangeConfig, ExchangeRegistry}
 import server.ArboServer
 
 import ciris._
@@ -20,7 +21,7 @@ object Main extends IOApp {
 
   def run(args: List[String]) =
     Stream
-      .eval(envConfig.load[IO])
+      .eval(multiExchangeConfig.load[IO])
       .map(_.value)
       .zip(Stream.resource(mainEC))
       .flatMap(Function.tupled(ArboServer.stream[IO] _))
@@ -35,10 +36,21 @@ object Main extends IOApp {
     }
   }
 
-  def envConfig: ConfigValue[Secret[ApiConfig]] =
+  /**
+   * Multi-exchange configuration loading with Secret types and proper redaction.
+   */
+  def multiExchangeConfig: ConfigValue[Secret[ExchangeConfig]] = {
+    ExchangeConfig.load[IO]
+      .secret(ExchangeConfig.show)
+  }
+
+  /**
+   * Legacy single-exchange configuration for backward compatibility.
+   */
+  def envConfig: ConfigValue[Secret[KrakenApiConfig]] =
     (env("API_KEY").redacted, envKey)
-      .parMapN(ApiConfig.apply)
-      .secret(ApiConfig.show)
+      .parMapN(KrakenApiConfig.apply)
+      .secret(KrakenApiConfig.show)
 
   def envKey: ConfigValue[ByteVector] =
     env("PRIVATE_KEY")
