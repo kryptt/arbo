@@ -10,6 +10,9 @@
 - `src/main/scala/arbo/binance/RestClient.scala` - Binance API client following existing RestClient trait pattern
 - `src/main/scala/arbo/binance/Order.scala` - Binance order types extending SellOrder with LIMIT, MARKET, STOP_LOSS variants
 - `src/main/scala/arbo/binance/ErrorHandler.scala` - Binance error handling with HTTP 429/418 responses and exponential backoff
+- `src/main/scala/arbo/data/ExchangeOrder.scala` - Enhanced SellOrder wrapper with exchange metadata for routing information
+- `src/main/scala/arbo/data/MultiExchangePath.scala` - Enhanced SellSelection with exchange routing and profit tracking across exchanges
+- `src/main/scala/arbo/Calculator.scala` - Enhanced with multiExchangeSelection method and cross-exchange support
 
 - `src/main/scala/arbo/exchanges/Exchange.scala` - Abstract trait defining unified exchange interface for both Kraken and Binance
 - `src/main/scala/arbo/exchanges/ExchangeRegistry.scala` - Multi-exchange management with health monitoring and registration logic  
@@ -23,6 +26,9 @@
 - `src/main/scala/arbo/binance/RestClient.scala` - Binance API client following existing RestClient trait pattern
 - `src/main/scala/arbo/binance/Order.scala` - Binance order types extending SellOrder with LIMIT, MARKET, STOP_LOSS variants
 - `src/main/scala/arbo/binance/ErrorHandler.scala` - Binance error handling with HTTP 429/418 responses and exponential backoff
+- `src/main/scala/arbo/data/ExchangeOrder.scala` - Enhanced SellOrder wrapper with exchange metadata for routing information
+- `src/main/scala/arbo/data/MultiExchangePath.scala` - Enhanced SellSelection with exchange routing and profit tracking across exchanges
+- `src/main/scala/arbo/Calculator.scala` - Enhanced with multiExchangeSelection method and cross-exchange support
 - `src/main/scala/arbo/binance/Config.scala` - Binance configuration with API key/secret and Show instance for redaction
 - `src/main/scala/arbo/binance/RestClient.scala` - Binance API client following existing RestClient trait pattern
 - `src/main/scala/arbo/binance/Order.scala` - Binance order types extending SellOrder with LIMIT, MARKET, STOP_LOSS variants
@@ -68,14 +74,14 @@
   - [x] 2.7 Implement order parameter validation with mandatory parameters per order type and quantity precision handling
   - [x] 2.8 Add Binance error handling with HTTP 429/418 responses, Retry-After headers, exponential backoff (1s,2s,4s,8s)
 
-- [ ] 3.0 Enhance Calculator for Multi-Exchange Support
-  - [ ] 3.1 Create `ExchangeOrder` wrapper extending SellOrder with exchange metadata for routing information
-  - [ ] 3.2 Implement `MultiExchangePath` extending SellSelection with exchange routing and profit tracking across exchanges
-  - [ ] 3.3 Add `multiExchangeSelection` method to Calculator accepting NonEmptyList[Exchange[M]] for cross-exchange analysis
-  - [ ] 3.4 Enhance SellSeed type to include exchange routing information for tree traversal
-  - [ ] 3.5 Modify recursion scheme coalgebra to consider cross-exchange paths in tree generation
-  - [ ] 3.6 Implement cross-exchange profit comparison logic with exchange-specific fee calculations
-  - [ ] 3.7 Add exchange-aware tree node generation in SellTree for multi-exchange path optimization
+- [x] 3.0 Enhance Calculator for Multi-Exchange Support
+  - [x] 3.1 Create `ExchangeOrder` wrapper extending SellOrder with exchange metadata for routing information
+  - [x] 3.2 Implement `MultiExchangePath` extending SellSelection with exchange routing and profit tracking across exchanges
+  - [x] 3.3 Add `multiExchangeSelection` method to Calculator accepting NonEmptyList[Exchange[M]] for cross-exchange analysis
+  - [x] 3.4 Enhance SellSeed type to include exchange routing information for tree traversal
+  - [x] 3.5 Modify recursion scheme coalgebra to consider cross-exchange paths in tree generation
+  - [x] 3.6 Implement cross-exchange profit comparison logic with exchange-specific fee calculations
+  - [x] 3.7 Add exchange-aware tree node generation in SellTree for multi-exchange path optimization
 
 - [ ] 4.0 Implement Multi-Exchange Configuration Management  
   - [ ] 4.1 Create `ExchangeConfig` case class with Optional[KrakenConfig], Optional[BinanceConfig], and ExchangePreferences
