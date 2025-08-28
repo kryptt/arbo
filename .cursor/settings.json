@@ -1,0 +1,51 @@
+{
+  "contextFileName": "AGENTS.md",
+  "scala": {
+    "enableSemanticHighlighting": true,
+    "enableCompletions": true,
+    "enableHover": true,
+    "enableDocumentSymbols": true,
+    "enableWorkspaceSymbols": true,
+    "enableReferences": true,
+    "enableRename": true,
+    "enableCodeActions": true,
+    "enableCodeLenses": true,
+    "enableInlayHints": true
+  },
+  "sbt": {
+    "enableAutoImport": true,
+    "bloopVersion": "1.4.8"
+  },
+  "editor": {
+    "formatOnSave": true,
+    "codeActionsOnSave": {
+      "source.organizeImports": true,
+      "source.fixAll": true
+    },
+    "rulers": [100, 120],
+    "tabSize": 2,
+    "insertSpaces": true
+  },
+  "files": {
+    "associations": {
+      "*.sbt": "scala",
+      "*.sc": "scala"
+    },
+    "exclude": {
+      "**/target/**": true,
+      "**/.bloop/**": true,
+      "**/.metals/**": true,
+      "**/project/target/**": true,
+      "**/project/project/**": true
+    }
+  },
+  "search": {
+    "exclude": {
+      "**/target": true,
+      "**/.bloop": true,
+      "**/.metals": true,
+      "**/project/target": true,
+      "**/project/project": true
+    }
+  }
+}

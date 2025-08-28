@@ -1,0 +1,78 @@
+---
+description: Generate a Product Requirements Document (PRD)
+alwaysApply: false
+appliesTo:
+  - 'tasks/prd-*.md'
+---
+
+# Rule: Generating a Product Requirements Document (PRD)
+
+## Goal
+
+To guide an AI assistant in creating a detailed Product Requirements Document (PRD) in Markdown format, based on an initial user prompt. The PRD should be clear, actionable, and suitable for a junior developer to understand and implement the feature.
+
+## Process
+
+1.  **Receive Initial Prompt:** The user provides a brief description or request for a new feature or functionality.
+2.  **Ask Clarifying Questions:** Before writing the PRD, the AI _must_ ask clarifying questions to gather sufficient detail. The goal is to understand the "what" and "why" of the feature, not necessarily the "how" (which the developer will figure out). Make sure to provide options in letter/number lists so I can respond easily with my selections.
+3.  **Generate PRD:** Based on the initial prompt and the user's answers to the clarifying questions, generate a PRD using the structure outlined below.
+4.  **Save PRD:** Save the generated document as `prd-[feature-name].md` inside the `/tasks` directory.
+
+## Clarifying Questions (Examples)
+
+The AI should adapt its questions based on the prompt, but here are some common areas to explore for Arbo's cryptocurrency trading context:
+
+- **Trading Logic:** "What trading problem does this feature solve?" or "How does this improve the bot's trading performance?"
+- **Risk Management:** "What are the risk implications of this feature? Should there be safety limits or circuit breakers?"
+- **Market Data:** "What market data does this feature need? Real-time prices, historical data, order book depth?"
+- **Algorithm Complexity:** "Will this feature involve complex calculations? Should we consider recursion depth limits or performance constraints?"
+- **External API Integration:** "Does this feature require new exchange API endpoints? Any rate limiting considerations?"
+- **Security Impact:** "Does this feature handle sensitive data (API keys, trading amounts, personal info)? How should we secure it?"
+- **Functional Requirements:** "What pure functions or data transformations are needed? Any side effects to manage?"
+- **State Management:** "What mutable state does this feature need? Should it use actors, STM, or other concurrency primitives?"
+- **Error Handling:** "What can go wrong? Network failures, invalid market data, insufficient funds?"
+- **Performance:** "Are there performance requirements? Memory usage limits for large trading trees?"
+- **Testing Strategy:** "How should we validate this? Property-based testing for algorithms? Mock trading scenarios?"
+- **Monitoring:** "What metrics should we track? Trading performance, error rates, API usage?"
+
+## PRD Structure
+
+The generated PRD should include the following sections:
+
+1.  **Introduction/Overview:** Briefly describe the feature and the problem it solves. State the goal.
+2.  **Goals:** List the specific, measurable objectives for this feature.
+3.  **User Stories:** Detail the user narratives describing feature usage and benefits.
+4.  **Functional Requirements:** List the specific functionalities the feature must have. Use clear, concise language (e.g., "The trading algorithm must validate order amounts before execution", "The system must handle exchange API rate limits gracefully"). Number these requirements for easy reference in task generation.
+5.  **Non-Goals (Out of Scope):** Clearly state what this feature will _not_ include to manage scope and guide task boundaries.
+6.  **Algorithm Design (Optional):** Describe any specific algorithmic approaches, data structures, or mathematical models required. Mention if recursion schemes, tree traversal, or specific functional programming patterns should be used. Include enough detail for developers to understand the computational approach.
+7.  **Technical Considerations (Optional):** Mention any known technical constraints, dependencies, or suggestions (e.g., "Should integrate with existing Calculator.scala recursion schemes", "Must maintain functional purity", "Requires new exchange API integration"). Consider Arbo's functional programming architecture, effect management with Cats Effect, and trading algorithm patterns.
+8.  **Success Metrics:** How will the success of this feature be measured? (e.g., "Improve trading profit by 5%", "Reduce algorithm execution time by 20%", "Decrease API failures by 15%"). Include both trading performance and technical metrics.
+9.  **Implementation Notes (Optional):** Any specific guidance for the implementation phase, such as suggested testing approaches, performance considerations, or integration points.
+10. **Open Questions:** List any remaining questions or areas needing further clarification before task generation begins.
+
+## Target Audience
+
+Assume the primary reader of the PRD is a **junior developer**. Therefore, requirements should be explicit, unambiguous, and avoid jargon where possible. Provide enough detail for them to understand the feature's purpose and core logic.
+
+## Output
+
+- **Format:** Markdown (`.md`)
+- **Location:** `/tasks/`
+- **Filename:** `prd-[feature-name].md`
+
+## Workflow Integration
+
+This rule is part of a three-stage workflow:
+
+1. **PRD Creation** (this rule): Create `prd-[feature-name].md`
+2. **Task Generation** (`@generate-tasks`): Create `tasks-[prd-file-name].md` from the PRD
+3. **Task Implementation** (`@process-task-list`): Execute tasks one by one with proper tracking
+
+## Final Instructions
+
+1. **DO NOT start implementing the PRD** - that happens in later stages
+2. **DO NOT create task lists** - use `@generate-tasks` rule for that
+3. **Make sure to ask clarifying questions** before writing the PRD
+4. **Take the user's answers** to improve the PRD iteratively
+5. **Focus on requirements clarity** - the PRD should be detailed enough for `@generate-tasks` to create actionable tasks
+6. **After completing the PRD**, inform the user: "PRD complete! Next step: use `@generate-tasks` to create an implementation task list from this PRD."

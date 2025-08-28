@@ -1,0 +1,238 @@
+# Arbo - Cryptocurrency Trading Bot
+
+## Overview
+Arbo is a sophisticated cryptocurrency trading bot implemented in Scala using advanced functional programming principles and recursion schemes. The bot is specifically designed for the Kraken cryptocurrency exchange and uses complex algorithms to find optimal sell paths through currency pairs to maximize profit.
+
+## Core Technologies
+- **Scala 2.13.1** - Primary programming language with advanced FP features
+- **Cats Effect 2.1.2** - Effect system for pure functional programming
+- **Droste 0.8.0** - Recursion schemes library for advanced tree traversal
+- **Http4s 0.21.2** - Functional HTTP client/server library
+- **Circe 0.13.0** - Functional JSON parsing and encoding
+- **Ciris 1.0.4** - Type-safe configuration management
+- **Monocle 2.0.4** - Optics library for functional data manipulation
+
+## Architecture Patterns
+
+### Recursion Schemes with Droste
+The core algorithm uses **Elgot morphisms** - a sophisticated recursion scheme that allows early termination in recursive computations:
+
+```scala
+// Core algorithm structure
+def selection[M[_]: Monad, O <: SellOrder](
+    sellOptions: GetSellOptions[M, O],
+    terminalCurrency: Currency,
+    maxDepth: Depth
+)(holding: Holding): M[SellSelection[O]] =
+  elgotM[M, SellTree[*, O], SellSeed[O], SellStep[O]](
+    optionsAlgebra,
+    optionsCoalgebra(sellOptions, terminalCurrency, maxDepth)
+  ).apply(initialSeed(holding))
+```
+
+### Effect Management with Cats Effect
+All side effects are managed through the IO monad:
+
+```scala
+def run(args: List[String]) =
+  Stream
+    .eval(envConfig.load[IO])
+    .map(_.value)
+    .zip(Stream.resource(mainEC))
+    .flatMap(Function.tupled(ArboServer.stream[IO] _))
+    .compile
+    .drain
+    .as(ExitCode.Success)
+```
+
+### Type-Safe Configuration with Ciris
+Sensitive configuration handled with Secret types:
+
+```scala
+def envConfig: ConfigValue[Secret[ApiConfig]] =
+  (env("API_KEY").redacted, envKey)
+    .parMapN(ApiConfig.apply)
+    .secret(ApiConfig.show)
+```
+
+## Domain Model
+
+### Core Types
+```scala
+type Currency = String
+type Ammount = BigDecimal
+type SellOptions[+O <: SellOrder] = List[O]
+type SellStep[O <: SellOrder] = SellSelection[O] => SellSelection[O]
+type SellSeed[+O <: SellOrder] = (Option[O], Holding, PastHoldings, Depth)
+```
+
+### Trading Order Model
+```scala
+case class SellOrder(
+  from: Currency, 
+  to: Currency, 
+  price: Price, 
+  fromAmmount: Ammount, 
+  fee: Fee
+)
+
+case class Holding(currency: Currency, ammount: Ammount)
+```
+
+## Development Guidelines
+
+### Functional Programming Principles
+1. **Pure Functions**: All functions should be referentially transparent
+2. **Immutable Data**: Never use `var`, always use immutable data structures
+3. **Effect Isolation**: Wrap all side effects in `IO` or other effect types
+4. **No Exceptions**: Use `Either`, `Option`, or effect types for error handling
+
+### Recursion Schemes Patterns
+1. **Algebra**: Use for processing tree structures (`Algebra[F, A]`)
+2. **Coalgebra**: Use for building tree structures (`Coalgebra[F, A]`)
+3. **Elgot Morphisms**: Custom recursion scheme allowing early termination
+4. **Separation**: Always separate structure (`F[_]`) from recursive logic
+
+### Type Safety Guidelines
+1. **ADTs**: Model domain concepts as sealed traits and case classes
+2. **Type Classes**: Implement instances for `Eq`, `Show`, `Functor`, etc.
+3. **Higher-Kinded Types**: Use `F[_]` and `M[_]` for generic effect types
+4. **Phantom Types**: Use types to encode business invariants at compile time
+
+### Error Handling Patterns
+1. **Typed Errors**: Create specific error ADTs for different failure modes
+2. **Validation**: Use `Validated` for accumulating errors
+3. **Recovery**: Provide sensible fallbacks and error recovery strategies
+4. **Effect Channels**: Use `IO` with error channels for side effects
+
+## Security Considerations
+
+### API Key Management
+- **Never log API keys**: Use `Secret` types for all sensitive configuration
+- **Environment Variables**: Store secrets in environment variables, never in code
+- **Redaction**: Automatically redact sensitive data in logs using Ciris Secret types
+
+### Input Validation
+- **API Responses**: Validate all external API responses from Kraken
+- **Bounds Checking**: Validate numeric inputs and trading amounts
+- **Type Safety**: Use types to prevent invalid states at compile time
+
+## Testing Strategy
+
+### Property-Based Testing
+- **ScalaCheck**: Use for algorithmic verification of trading logic
+- **Generators**: Create custom generators for domain types
+- **Laws Testing**: Verify typeclass laws for custom instances
+
+### Effect Testing
+- **IO Testing**: Test IO computations with proper effect testing libraries
+- **Mock APIs**: Never hit real Kraken API in tests, use mocks
+- **Resource Management**: Use `Resource[IO, A]` for test setup/teardown
+
+## Performance Optimization
+
+### Memory Management
+- **Recursion Limits**: Implement maximum search depth to prevent stack overflow
+- **Lazy Evaluation**: Use lazy collections where appropriate
+- **Stream Processing**: Use `fs2.Stream` for large data processing
+- **Resource Cleanup**: Always use `Resource[IO, A]` for resource management
+
+### Algorithm Optimization
+- **Memoization**: Cache expensive computations using the cache infrastructure
+- **Parallel Processing**: Use `Parallel[F]` for concurrent operations
+- **Tree Pruning**: Implement smart pruning in recursion schemes
+- **Early Termination**: Use Elgot morphisms to short-circuit computations
+
+## Setup Commands
+
+```bash
+# Development setup
+sbt compile                           # Compile the project
+sbt run                              # Run the trading bot
+sbt test                             # Run test suite
+sbt ~reRun                           # Auto-reload during development
+
+# Code quality
+sbt scalafmt                         # Format code
+sbt clean coverage test coverageReport  # Generate coverage report
+
+# Package for deployment
+sbt universal:packageBin             # Create deployment package
+```
+
+## Environment Configuration
+
+Required environment variables:
+```bash
+export API_KEY="your_kraken_api_key"
+export PRIVATE_KEY="base64_encoded_private_key"
+```
+
+**Critical**: Private keys are handled as `Secret` types and automatically redacted in logs.
+
+## Common Patterns
+
+### Effect Composition
+```scala
+// Preferred pattern for effect composition
+for {
+  config <- loadConfig[IO]
+  client <- createClient[IO](config)
+  result <- client.fetchTradingData
+} yield result
+```
+
+### Recursion Schemes Usage
+```scala
+// Separate data structure from recursion logic
+case class SellTreeF[A](value: SellOrder, children: List[A])
+type SellTree = Fix[SellTreeF]
+
+val processAlgebra: Algebra[SellTreeF, SellSelection] = ???
+val buildCoalgebra: Coalgebra[SellTreeF, SellSeed] = ???
+```
+
+### Error Handling
+```scala
+// Use Either for business logic errors
+def calculateProfit(order: SellOrder): Either[TradeError, BigDecimal]
+
+// Use IO for effects with error channels
+def fetchMarketData: IO[Either[ApiError, MarketData]]
+```
+
+## Anti-Patterns to Avoid
+
+❌ **Never Do:**
+- Use `var` or mutable collections
+- Throw exceptions instead of using error types
+- Block operations without proper effect types
+- Hardcode configuration values
+- Log sensitive trading information
+- Deep recursion without trampolining
+- Ignore compiler warnings about effects
+
+✅ **Always Do:**
+- Handle all side effects through IO
+- Use immutable data structures
+- Validate all external inputs
+- Clean up resources properly
+- Test algorithmic properties
+- Document complex recursion schemes
+- Use types to prevent invalid states
+
+## Project Structure
+```
+src/main/scala/arbo/
+├── Main.scala              # Application entry point
+├── Calculator.scala        # Core trading algorithm using recursion schemes
+├── Security.scala          # Cryptographic utilities
+├── data/                   # Domain models and type definitions
+├── kraken/                 # Kraken exchange API integration
+├── server/                 # HTTP server for bot control
+├── elgot/                  # Custom recursion scheme implementations
+└── cache/                  # Caching functionality
+```
+
+## Remember
+This is a **financial trading system**. Correctness, type safety, and security are paramount. Always prefer the most type-safe and explicit approach, even if it requires more code. The sophisticated use of recursion schemes and functional programming patterns is intentional - this system prioritizes mathematical correctness and provable properties over simplicity.
