@@ -13,6 +13,8 @@
 - `src/main/scala/arbo/data/ExchangeOrder.scala` - Enhanced SellOrder wrapper with exchange metadata for routing information
 - `src/main/scala/arbo/data/MultiExchangePath.scala` - Enhanced SellSelection with exchange routing and profit tracking across exchanges
 - `src/main/scala/arbo/Calculator.scala` - Enhanced with multiExchangeSelection method and cross-exchange support
+- `src/main/scala/arbo/exchanges/ExchangeConfig.scala` - Multi-exchange configuration management with environment variable support
+- `src/main/scala/arbo/Main.scala` - Updated to support multi-exchange configuration loading
 
 - `src/main/scala/arbo/exchanges/Exchange.scala` - Abstract trait defining unified exchange interface for both Kraken and Binance
 - `src/main/scala/arbo/exchanges/ExchangeRegistry.scala` - Multi-exchange management with health monitoring and registration logic  
@@ -29,6 +31,8 @@
 - `src/main/scala/arbo/data/ExchangeOrder.scala` - Enhanced SellOrder wrapper with exchange metadata for routing information
 - `src/main/scala/arbo/data/MultiExchangePath.scala` - Enhanced SellSelection with exchange routing and profit tracking across exchanges
 - `src/main/scala/arbo/Calculator.scala` - Enhanced with multiExchangeSelection method and cross-exchange support
+- `src/main/scala/arbo/exchanges/ExchangeConfig.scala` - Multi-exchange configuration management with environment variable support
+- `src/main/scala/arbo/Main.scala` - Updated to support multi-exchange configuration loading
 - `src/main/scala/arbo/binance/Config.scala` - Binance configuration with API key/secret and Show instance for redaction
 - `src/main/scala/arbo/binance/RestClient.scala` - Binance API client following existing RestClient trait pattern
 - `src/main/scala/arbo/binance/Order.scala` - Binance order types extending SellOrder with LIMIT, MARKET, STOP_LOSS variants
@@ -38,6 +42,8 @@
 - `src/main/scala/arbo/data/ExchangeOrder.scala` - Enhanced SellOrder wrapper with exchange metadata
 - `src/main/scala/arbo/data/MultiExchangePath.scala` - Enhanced SellSelection with exchange routing information
 - `src/main/scala/arbo/Calculator.scala` - Enhanced with multiExchangeSelection method and cross-exchange support
+- `src/main/scala/arbo/exchanges/ExchangeConfig.scala` - Multi-exchange configuration management with environment variable support
+- `src/main/scala/arbo/Main.scala` - Updated to support multi-exchange configuration loading
 - `src/main/scala/arbo/Main.scala` - Updated to support multi-exchange configuration loading
 - `src/test/scala/arbo/exchanges/ExchangeRegistrySpec.scala` - Tests for multi-exchange management logic
 - `src/test/scala/arbo/binance/RestClientSpec.scala` - Tests for Binance API client with mocked responses
@@ -83,13 +89,13 @@
   - [x] 3.6 Implement cross-exchange profit comparison logic with exchange-specific fee calculations
   - [x] 3.7 Add exchange-aware tree node generation in SellTree for multi-exchange path optimization
 
-- [ ] 4.0 Implement Multi-Exchange Configuration Management  
-  - [ ] 4.1 Create `ExchangeConfig` case class with Optional[KrakenConfig], Optional[BinanceConfig], and ExchangePreferences
-  - [ ] 4.2 Implement `ExchangePreferences` with timeout, maxDepthPerExchange, preferredOrder, minProfitThreshold configuration
-  - [ ] 4.3 Add environment variable support for BINANCE_API_KEY, BINANCE_SECRET_KEY, BINANCE_TESTNET using Ciris
-  - [ ] 4.4 Update Main.scala to load multi-exchange configuration with Secret types and proper redaction
-  - [ ] 4.5 Implement exchange preference configuration: EXCHANGE_TIMEOUT_MS, MAX_DEPTH_PER_EXCHANGE, PREFERRED_EXCHANGES
-  - [ ] 4.6 Add configurable exchange selection weights and minimum profit thresholds per exchange
+- [x] 4.0 Implement Multi-Exchange Configuration Management  
+  - [x] 4.1 Create `ExchangeConfig` case class with Optional[KrakenConfig], Optional[BinanceConfig], and ExchangePreferences
+  - [x] 4.2 Implement `ExchangePreferences` with timeout, maxDepthPerExchange, preferredOrder, minProfitThreshold configuration
+  - [x] 4.3 Add environment variable support for BINANCE_API_KEY, BINANCE_SECRET_KEY, BINANCE_TESTNET using Ciris
+  - [x] 4.4 Update Main.scala to load multi-exchange configuration with Secret types and proper redaction
+  - [x] 4.5 Implement exchange preference configuration: EXCHANGE_TIMEOUT_MS, MAX_DEPTH_PER_EXCHANGE, PREFERRED_EXCHANGES
+  - [x] 4.6 Add configurable exchange selection weights and minimum profit thresholds per exchange
 
 - [ ] 5.0 Create Comprehensive Testing Suite and Documentation
   - [ ] 5.1 Create unit tests for Exchange abstraction layer with ScalaCheck properties for exchange selection logic
